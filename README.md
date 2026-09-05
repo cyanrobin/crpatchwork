@@ -1,9 +1,10 @@
 # crpatchwork 🐦✂️
 
-**青知更鸟的拼布工坊** —— 一个纯本地、离线可用的 SillyTavern 预设可视化编辑器。
+**青知更鸟的拼布工坊** —— 一个 SillyTavern 预设可视化编辑器。
 
-用拖拽卡片的方式查看、排序、编辑 SillyTavern 预设里的每一条提示词（prompt），像拼布一样把别人作品里好用的片段，拆下来重新拼成你自己的风格。**单文件 HTML，双击即用，无依赖、不上传任何数据。**
+用拖拽卡片的方式查看、排序、编辑 SillyTavern 预设里的每一条提示词（prompt），像拼布一样把别人作品里好用的片段，拆下来重新拼成你自己的风格。**单文件 HTML，无依赖、不上传任何数据。**
 
+> 🚀 **在线使用（推荐，免下载）：** [https://cyanrobin.github.io/crpatchwork/crpatchwork.html](https://cyanrobin.github.io/crpatchwork/crpatchwork.html)
 > 🌙 支持夜间模式 · ⧉ 支持跨标签页复制/粘贴条目
 
 ---
@@ -19,9 +20,15 @@
 
 ## 怎么用
 
-1. 打开 `st-preset-drag-editor.html`（双击即可，纯本地，断网也能用）
-2. 右上「📂 打开 JSON」或直接把 `.json` 拖进窗口
-3. 编辑完点「⬇ 导出 JSON」，得到 `xxx_edited.json`，放进 SillyTavern 的预设目录即可
+**在线直接用（免下载）：** 打开 [crpatchwork.html](https://cyanrobin.github.io/crpatchwork/crpatchwork.html)，即可在浏览器里使用，无需安装任何东西。
+
+**本地离线用（断网也能用）：** 如果你想要一份可以在自己电脑上离线运行的副本，下载本仓库里的 [`crpatchwork.html`](crpatchwork.html)（单一文件），双击用浏览器打开即可——纯本地运行，断网也能用，数据绝不上传。
+
+无论哪种方式，用法都一样：
+
+1. 右上「📂 打开 JSON」，或直接把 `.json` 预设文件拖进窗口
+2. 编辑完点「⬇ 导出 JSON」，得到 `xxx_edited.json`
+3. 把它放进 SillyTavern 的预设目录，即可在酒馆里使用
 
 > 本工具不保存、不上传你的任何数据，所有内容都在你自己的浏览器里，刷新即失 —— 记得及时导出。
 
