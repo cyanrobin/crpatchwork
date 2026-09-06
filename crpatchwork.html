@@ -1,0 +1,1282 @@
+<!DOCTYPE html>
+<html lang="zh-CN" data-page-node-id="0hQZhM7qDeu5bqGTp1XEHm">
+<head data-page-node-id="ECGtwACenDjdGXsrDfNIrP">
+<meta charset="UTF-8" data-page-node-id="crinWVUPqAB02cSFEp8UUG">
+<meta name="viewport" content="width=device-width, initial-scale=1.0" data-page-node-id="JD39f4t0jdTU90HlBlCo2y">
+<title>ST 预设编辑器 · crpatchwork</title>
+<meta name="description" content="crpatchwork —— SillyTavern (ST) 预设 JSON 可视化编辑器：整理 prompts / order / 分支结构，拖拽排序、启停切换、批量复制粘贴、多选管理、一键导出。纯本地运行，数据不出浏览器。">
+<meta name="keywords" content="SillyTavern 预设编辑器,ST 预设,酒馆预设,世界书编辑,preset editor,World Info,JSON 可视化,SillyTavern 工具">
+<style>
+  :root{
+    --bg:#eef1f7; --panel:#ffffff; --line:#dfe4ee;
+    --ink:#1c2333; --muted:#67718b; --faint:#9aa4bd;
+    --acc:#4a6cf7; --acc-soft:#eaf0ff;
+    --ok:#16a34a; --ok-soft:#e7f6ee;
+    --sys:#7c5cff; --sys-soft:#f0edff;
+    --usr:#0891b2; --usr-soft:#e2f5fb;
+    --ast:#3a5ce0; --ast-soft:#eef2ff;
+    --dang:#dc2626; --dang-soft:#fdecec;
+    --shadow:0 6px 24px rgba(28,35,51,.08);
+    --radius:12px;
+    --scr-w:12px;        /* 强制滚动条宽度，让"有无滚动条"显式 */
+    --tint:#f3f5fa;      /* 通用浅底(序号/只读块等) */
+    --tint-2:#f6f7fb;    /* 稍深的只读等宽底 */
+    --tint-3:#fafbfe;    /* fieldnote 底 */
+    --tint-4:#fbfcff;    /* 空态提示底 */
+  }
+  /* 夜间模式:整体替换表面色(由 <html data-theme="dark"> 触发) */
+  html[data-theme="dark"]{
+    --bg:#14171f; --panel:#1d212c; --line:#2c3242;
+    --ink:#e6eaf4; --muted:#9aa4bd; --faint:#6b7590;
+    --acc:#6b8aff; --acc-soft:#1f2a4a;
+    --ok:#3ecf7a; --ok-soft:#12301f;
+    --sys:#a78bfa; --sys-soft:#2a2345;
+    --usr:#22b8e0; --usr-soft:#0d2f3b;
+    --ast:#6b8aff; --ast-soft:#1a2544;
+    --dang:#f87171; --dang-soft:#3a1d23;
+    --shadow:0 6px 24px rgba(0,0,0,.35);
+    --tint:#242936; --tint-2:#1f232f; --tint-3:#1a1e28; --tint-4:#1a1f2c;
+  }
+  /* 个别写死浅色的 UI 元素,需在暗色下收敛 */
+  html[data-theme="dark"] body{background:var(--bg)}
+  html[data-theme="dark"] .ordpill{background:#262b38;color:#8b94ad}
+  html[data-theme="dark"] .d0{background:#232838;color:#98a2b8}
+  html[data-theme="dark"] .dna{background:#20242f;color:#6b7590}
+  html[data-theme="dark"] .d3{background:#3a2c12;color:#e2a53f}
+  html[data-theme="dark"] .card:hover{background:#222836}
+  html[data-theme="dark"] #emptyHint{background:#191d26;border-color:#2c3242}
+  html[data-theme="dark"] .placeholder{color:#6b7590}
+  html[data-theme="dark"] #dirtyBar{background:#332a08;color:#e0b45a;border-bottom-color:#4a3d12}
+  html[data-theme="dark"] .fieldnote{background:#1a1e28;border-color:#2c3242;color:#aeb6c9}
+  html[data-theme="dark"] .inp,.inp:focus,html[data-theme="dark"] .txa,html[data-theme="dark"] .sel,
+  html[data-theme="dark"] .inp:focus,html[data-theme="dark"] .txa:focus{background:#14171f;color:var(--ink);border-color:#2c3242}
+  html[data-theme="dark"] #detailHead{background:var(--panel)}
+  html[data-theme="dark"] .listbanner{background:#1a1e28}
+  html[data-theme="dark"] .card{background:var(--panel)}
+  html[data-theme="dark"] .btn{background:#232838;color:var(--ink);border-color:#2c3242}
+  html[data-theme="dark"] .btn:not(.primary):not(.danger):hover{background:#2a3040;color:var(--acc);border-color:var(--acc)}
+  html[data-theme="dark"] .btn.primary{background:var(--acc);border-color:var(--acc);color:#0d1117}
+  html[data-theme="dark"] .btn.primary:hover{background:#89a2ff;color:#0d1117}
+  html[data-theme="dark"] .btn.danger{background:#232838;color:#f3a7a7;border-color:#4a2a30}
+  html[data-theme="dark"] .btn.danger:hover{background:#4a1d24;border-color:var(--dang);color:#ff9c9c}
+  html[data-theme="dark"] .btn:disabled{background:#1a1e28;color:#6b7590;border-color:#2c3242}
+  html[data-theme="dark"] .pill{background:#2a2345;color:#c4b5fd}
+  html[data-theme="dark"] .chip{background:#1d212c;color:var(--ink);border-color:#2c3242}
+  html[data-theme="dark"] .chip.active{background:var(--acc);border-color:var(--acc)}
+  html[data-theme="dark"] .toast{background:#f0f2f8;color:#1c2333}
+  html[data-theme="dark"] .fieldnote code,html[data-theme="dark"] .depthdesc,html[data-theme="dark"] .fieldnote{color:#aeb6c9}
+  html[data-theme="dark"] .listbanner .cnt{color:#6b7590}
+  html[data-theme="dark"] .copybtn,html[data-theme="dark"] .editbtn,html[data-theme="dark"] .delbtn{background:#232838;color:var(--muted);border-color:#2c3242}
+  /* 锚点卡(紫条纹)暗色版 */
+  html[data-theme="dark"] .card.anchor{background:repeating-linear-gradient(-45deg,#241f3a,#241f3a 8px,#2a2445 8px,#2a2445 16px);border-color:#3a3470}
+  html[data-theme="dark"] .card.anchor:hover{background:repeating-linear-gradient(-45deg,#241f3a,#241f3a 8px,#312a52 8px,#312a52 16px);border-color:#4c4490}
+  html[data-theme="dark"] .card.anchor .nm{color:#b4a8f0}
+  html[data-theme="dark"] .card.sel{background:#1f2a4a;border-color:var(--acc)}
+  html[data-theme="dark"] .card.anchor.sel{background:repeating-linear-gradient(-45deg,#232c4e,#232c4e 8px,#292c58 8px,#292c58 16px);border-color:var(--sys);box-shadow:0 0 0 2px rgba(167,139,250,.25)}
+  html[data-theme="dark"] .fieldnote{background:#1d2130;border-color:#2c3242}
+  html[data-theme="dark"] .listbanner{background:#1a1e28}
+  html[data-theme="dark"] .switch input:checked+.sl{background:var(--ok)}
+  html[data-theme="dark"] .switch .sl{background:#3a4156}
+  html[data-theme="dark"] .switch .sl:before{background:#cdd4e2}
+  html[data-theme="dark"] #leftCol::-webkit-scrollbar,html[data-theme="dark"] #rightCol::-webkit-scrollbar{background:#1a1e28}
+  html[data-theme="dark"] #leftCol::-webkit-scrollbar-thumb,html[data-theme="dark"] #rightCol::-webkit-scrollbar-thumb{background:#39415a;border:2px solid #1a1e28}
+  html[data-theme="dark"] #leftCol::-webkit-scrollbar-thumb:hover,html[data-theme="dark"] #rightCol::-webkit-scrollbar-thumb:hover{background:#4b5470}
+  html[data-theme="dark"] .grip,html[data-theme="dark"] .sep span{color:#6b7590}
+  html[data-theme="dark"] .sep{background:#2c3242}
+  html[data-theme="dark"] .listbanner .badge.cur{background:#12301f;color:#3ecf7a}
+  html[data-theme="dark"] .possel button.active,html[data-theme="dark"] .role-seg button.active{color:#0d1117}
+  html[data-theme="dark"] .possel button:not(.active),html[data-theme="dark"] .role-seg button:not(.active){color:#9aa4bd;background:#1a1e28;border-color:#2c3242}
+  html[data-theme="dark"] .possel,html[data-theme="dark"] .role-seg{background:#1a1e28;border-color:#2c3242}
+  html[data-theme="dark"] .fieldnote{background:#20242f;border-color:#2c3242;color:#aeb6c9}
+  *{box-sizing:border-box}
+  html,body{margin:0;padding:0}
+  html,body{height:100%}
+  body{
+    font-family:"Segoe UI","Microsoft YaHei",system-ui,sans-serif;
+    background:var(--bg); color:var(--ink); font-size:14px; line-height:1.5;
+    display:flex; flex-direction:column; overflow:hidden;        /* 关键：body 不出滚动条 */
+  }
+  /* ---------- header ---------- */
+  header{
+    background:var(--panel); border-bottom:1px solid var(--line);
+    padding:10px 18px; display:flex; align-items:center; gap:12px; flex-wrap:wrap;
+    flex:0 0 auto;
+  }
+  header h1{font-size:15px; margin:0; font-weight:700; display:flex; align-items:center; gap:8px}
+  header h1 .dot{width:9px;height:9px;border-radius:50%;background:var(--acc)}
+  .spacer{flex:1}
+  .btn{
+    border:1px solid var(--line); background:#fff; color:var(--ink);
+    padding:6px 12px; border-radius:8px; cursor:pointer; font-size:13px;
+    transition:.15s; display:inline-flex; align-items:center; gap:6px;
+  }
+  .btn:hover{background:var(--acc-soft); border-color:var(--acc); color:var(--acc)}
+  .btn.primary{background:var(--acc); border-color:var(--acc); color:#fff}
+  .btn.primary:hover{background:#3a5ce0; color:#fff}
+  .btn.danger:hover{background:var(--dang-soft);border-color:var(--dang);color:var(--dang)}
+  .btn:disabled{opacity:.45; cursor:not-allowed; background:#fff; color:var(--ink); border-color:var(--line)}
+  .btn input[type=file]{display:none}
+  .pill{font-size:11.5px; padding:2px 8px; border-radius:99px; background:var(--acc-soft); color:var(--acc); max-width:200px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap}
+  #dirtyBar{
+    display:none; background:#fef6e0; color:#8a5b00; padding:5px 18px; font-size:12.5px;
+    border-bottom:1px solid #f0e2b0; flex:0 0 auto;
+  }
+  #dirtyBar.show{display:block}
+
+  /* ---------- 多选模式 ---------- */
+  #multiBar{
+    display:none; align-items:center; gap:8px; padding:7px 18px; flex:0 0 auto;
+    background:var(--acc-soft); border-bottom:1px solid var(--acc);
+  }
+  #multiBar.show{display:flex}
+  .mb-count{font-size:12.5px; color:var(--acc); font-weight:600}
+  .mb-count b{font-size:14px}
+  .mb-spacer{flex:1 1 auto}
+  #multiBar .btn{padding:4px 10px; font-size:12px}
+  /* 多选模式下卡片的复选框 */
+  .mcheck{
+    flex:0 0 auto; width:16px; height:16px; margin-right:2px; cursor:pointer;
+    accent-color:var(--acc);
+  }
+  /* 勾选中的卡片高亮 */
+  .card.multi-picked{
+    border-color:var(--acc) !important;
+    box-shadow:0 0 0 2px var(--acc-soft) inset;
+  }
+  /* 多选模式下：卡片点击=切换勾选，不进编辑 */
+  body.multi-on .card{cursor:pointer}
+  body.multi-on .card .editbtn,
+  body.multi-on .card .copybtn,
+  body.multi-on .card .delbtn{opacity:.35; pointer-events:none}
+  html[data-theme="dark"] #multiBar{background:#1a2340; border-bottom-color:#3b4a7a}
+
+  /* ---------- body: two columns (both internal-scroll) ---------- */
+  .workspace{
+    flex:1 1 0; min-height:0;          /* 关键：让 workspace 在 flex-column body 里可收缩 */
+    display:flex; flex-direction:row; min-width:0;
+  }
+  #leftCol{
+    width:480px; min-width:340px; flex:0 0 auto;
+    height:100%;                        /* 关键：拿到实际高度，让 overflow-y 有意义 */
+    overflow-y:scroll;                   /* 永远显示滚动条槽，强制可见 */
+    overflow-x:hidden;
+    padding:10px; background:var(--bg);
+    border-right:1px solid var(--line);
+    scrollbar-gutter:stable;
+  }
+  #rightCol{
+    flex:1 1 0; min-width:0; height:100%;
+    overflow-y:auto; overflow-x:hidden; background:var(--panel);
+  }
+  @media (max-width:900px){
+    .workspace{flex-direction:column}
+    #leftCol{width:auto; min-width:0; height:auto; max-height:48vh; border-right:none; border-bottom:1px solid var(--line)}
+    #rightCol{height:auto}
+  }
+
+  /* ---------- flat list (no branch headers) ---------- */
+  .listbanner{
+    margin:4px 4px 8px; padding:9px 11px;
+    background:var(--panel); border:1px solid var(--line); border-radius:10px;
+    font-size:11.5px; color:var(--muted); display:flex; align-items:center; gap:8px; flex-wrap:wrap;
+  }
+  .listbanner .badge{font-size:10.5px; padding:1px 7px; border-radius:6px; font-weight:600}
+  .listbanner .badge.cur{background:var(--ok-soft); color:var(--ok)}
+  .listbanner .cnt{margin-left:auto; color:var(--faint)}
+  .gapdiv{height:10px}
+  /* 分支分隔器（非折叠），每个分支开头一道横线+小标签 */
+  .sep{height:1px; background:var(--line); margin:14px 8px 8px; position:relative}
+  .sep span{position:absolute; left:50%; top:-7px; transform:translateX(-50%); background:var(--bg); padding:0 8px; font-size:10.5px; color:var(--faint)}
+
+  /* ---------- compact card ---------- */
+  .card{
+    display:flex; align-items:center; gap:8px; padding:7px 9px;
+    border:1px solid transparent; border-radius:8px; margin:2px 0; cursor:pointer;
+    transition:.12s; position:relative; background:var(--panel);
+  }
+  .card:hover{background:#f6f8ff}
+  .card.sel{background:var(--acc-soft); border-color:var(--acc)}
+  .card.offcard .nm{text-decoration:line-through; opacity:.55}
+  .grip{color:var(--faint); font-size:14px; cursor:grab; user-select:none; flex:0 0 auto; line-height:1; padding:0 2px}
+  .grip:active{cursor:grabbing}
+  .ordpill{
+    font-size:10.5px; color:var(--faint); background:var(--tint); padding:1px 5px; border-radius:4px;
+    font-variant-numeric:tabular-nums; flex:0 0 auto;
+  }
+  .dchip{font-size:10px; font-weight:700; border-radius:4px; padding:1px 4px; flex:0 0 auto}
+  .d0{background:#eef1f6;color:#7b8496}.d1{background:var(--sys-soft);color:var(--sys)}
+  .d2{background:var(--usr-soft);color:var(--usr)}.d3{background:#fff2e2;color:#c77800}
+  .d4{background:var(--dang-soft);color:#d9534f}
+  .dna{background:#f5f6fa;color:var(--faint);font-style:italic;font-weight:400}
+  .rpt{width:8px;height:8px;border-radius:50%;flex:0 0 auto}
+  .rpt.system{background:var(--sys)}.rpt.user{background:var(--usr)}.rpt.assistant{background:var(--ast)}
+  .mid{flex:1; min-width:0; display:flex; flex-direction:column; line-height:1.3}
+  .nm{font-size:13px; font-weight:600; white-space:nowrap; overflow:hidden; text-overflow:ellipsis}
+  .nm.empty{color:var(--faint); font-weight:400}
+  .sub{font-size:11px; color:var(--faint); white-space:nowrap; overflow:hidden; text-overflow:ellipsis}
+  .switch{position:relative; width:30px; height:17px; cursor:pointer; flex:0 0 auto}
+  .switch input{opacity:0; width:0; height:0; margin:0}
+  .switch .sl{position:absolute; inset:0; background:#cdd4e2; border-radius:99px; transition:.2s}
+  .switch .sl:before{content:""; position:absolute; height:13px; width:13px; left:2px; top:2px;
+    background:#fff; border-radius:50%; transition:.2s; box-shadow:0 1px 2px rgba(0,0,0,.2)}
+  .switch input:checked+.sl{background:var(--ok)}
+  .switch input:checked+.sl:before{transform:translateX(13px)}
+  .editbtn{
+    flex:0 0 auto; border:1px solid var(--line); background:#fff; color:var(--muted);
+    width:24px; height:24px; border-radius:6px; cursor:pointer; font-size:12px; line-height:1;
+    display:flex; align-items:center; justify-content:center; transition:.12s;
+  }
+  .editbtn:hover{background:var(--acc); border-color:var(--acc); color:#fff}
+  .delbtn{
+    flex:0 0 auto; border:1px solid var(--line); background:#fff; color:var(--muted);
+    width:24px; height:24px; border-radius:6px; cursor:pointer; font-size:12px; line-height:1;
+    display:flex; align-items:center; justify-content:center; transition:.12s;
+  }
+  .delbtn:hover{background:var(--dang); border-color:var(--dang); color:#fff}
+  .copybtn{
+    flex:0 0 auto; border:1px solid var(--line); background:#fff; color:var(--muted);
+    width:24px; height:24px; border-radius:6px; cursor:pointer; font-size:12px; line-height:1;
+    display:flex; align-items:center; justify-content:center; transition:.12s;
+  }
+  .copybtn:hover{background:var(--sys); border-color:var(--sys); color:#fff}
+  .drag-over-top{box-shadow:0 -2px 0 0 var(--acc) inset}
+  .drag-over-bot{box-shadow:0 2px 0 0 var(--acc) inset}
+  .dragging{opacity:.35}
+  .card.posrel .ordpill{opacity:.55; text-decoration:line-through}
+  /* 锚点卡:锁定视觉 */
+  .card.anchor{background:repeating-linear-gradient(-45deg,#fbfaff,#fbfaff 8px,#f6f4ff 8px,#f6f4ff 16px); border:1px dashed #cfc6ef; cursor:grab}
+  .card.anchor:hover{background:repeating-linear-gradient(-45deg,#fbfaff,#fbfaff 8px,#f1eeff 8px,#f1eeff 16px); border-color:#b9ace6}
+  .card.anchor:active{cursor:grabbing}
+  .card.anchor.sel{border-color:var(--sys);box-shadow:0 0 0 2px var(--sys-soft)}
+  .card.anchor .nm{color:#5a4f9a}
+  .locknote{color:#3a2d6b}
+  .locknote b{color:#2f235c}
+  html[data-theme="dark"] .locknote{color:#cfc6f5}
+  html[data-theme="dark"] .locknote b{color:#e4defa}
+
+  /* ---------- right detail panel ---------- */
+  #rightCol .placeholder{height:100%; display:flex; flex-direction:column; align-items:center; justify-content:center; color:var(--faint); gap:8px; text-align:center; padding:20px}
+  #rightCol .placeholder .ico{font-size:42px}
+  #detailWrap{display:flex; flex-direction:column; min-height:100%}
+  #detailHead{
+    padding:14px 18px; border-bottom:1px solid var(--line);
+    display:flex; align-items:center; gap:10px; flex:0 0 auto;
+    position:sticky; top:0; background:var(--panel); z-index:2;
+  }
+  #detailHead h2{margin:0; font-size:15px; display:flex; align-items:center; gap:8px}
+  #detailBody{padding:18px; display:flex; flex-direction:column; gap:14px; max-width:780px}
+  .fg{display:flex; flex-direction:column; gap:5px}
+  .fg>label{font-size:12px; font-weight:700; color:var(--muted)}
+  .fg .hint{font-size:11px; color:var(--faint); font-weight:400; margin-left:6px}
+  .inp,.txa,.sel{
+    border:1px solid var(--line); border-radius:8px; padding:7px 10px; font-size:13px;
+    background:#fff; color:var(--ink); width:100%;
+  }
+  .inp:focus,.txa:focus,.sel:focus{outline:none; border-color:var(--acc); box-shadow:0 0 0 2px var(--acc-soft)}
+  .txa{font-family:"Cascadia Code","Consolas",monospace; font-size:12.5px; resize:vertical; min-height:180px; line-height:1.6}
+  .row2{display:flex; gap:14px; flex-wrap:wrap}
+  .row2 .fg{flex:1; min-width:160px}
+  .chiprow{display:flex; flex-wrap:wrap; gap:6px}
+  .chip{border:1px solid var(--line); background:#fff; padding:5px 11px; border-radius:99px; cursor:pointer; font-size:12px; transition:.12s}
+  .chip:hover{border-color:var(--acc)}
+  .chip.active{background:var(--acc); border-color:var(--acc); color:#fff}
+  .possel{display:flex; border:1px solid var(--line); border-radius:9px; overflow:hidden}
+  .possel button{
+    flex:1; padding:8px 0; border:none; background:#fff; font-size:12.5px; font-weight:600;
+    cursor:pointer; color:var(--muted); transition:.12s;
+  }
+  .possel button.active{color:#fff}
+  .possel button[data-pos="0"].active{background:var(--usr)}
+  .possel button[data-pos="1"].active{background:var(--sys)}
+  .possel button:not(:last-child){border-right:1px solid var(--line)}
+  .role-seg{display:flex; border:1px solid var(--line); border-radius:9px; overflow:hidden}
+  .role-seg button{
+    flex:1; padding:8px 0; border:none; background:#fff; font-size:12.5px; font-weight:600;
+    cursor:pointer; color:var(--muted); transition:.12s;
+  }
+  .role-seg button.active{color:#fff}
+  .role-seg button[data-r="system"].active{background:var(--sys)}
+  .role-seg button[data-r="user"].active{background:var(--usr)}
+  .role-seg button[data-r="assistant"].active{background:var(--ast)}
+  .role-seg button:not(:last-child){border-right:1px solid var(--line)}
+  .posrow{display:flex; gap:8px; align-items:center}
+  .posrow .inp{width:84px; text-align:center; font-variant-numeric:tabular-nums}
+  .depthdesc{font-size:11.5px; color:var(--faint); margin-top:2px; line-height:1.5}
+  .switchrow{display:flex; align-items:center; gap:10px; padding:8px 0}
+  .switchrow .switch{width:36px; height:20px}
+  .switchrow .switch .sl:before{width:16px;height:16px}
+  .switchrow .switch input:checked+.sl:before{transform:translateX(16px)}
+  .switchrow .lbl{font-size:13px; font-weight:600}
+  .switchrow .hint{color:var(--faint); font-size:11px; margin-left:auto}
+  .fieldnote{font-size:11px; color:var(--muted); background:var(--tint-3); border:1px dashed var(--line); border-radius:8px; padding:7px 10px; line-height:1.6}
+  .fldiv{border-top:1px solid var(--line); padding-top:14px}
+  .badge{font-size:10.5px; padding:1px 7px; border-radius:6px; font-weight:600}
+  .badge.cur{background:var(--ok-soft); color:var(--ok)}
+  .badge.sys{background:var(--sys-soft); color:var(--sys)}
+
+  .toast{
+    position:fixed; bottom:26px; left:50%; transform:translateX(-50%);
+    background:#242a3d; color:#fff; padding:9px 20px; border-radius:10px; font-size:13px;
+    z-index:99; opacity:0; transition:.2s; pointer-events:none; box-shadow:0 8px 30px rgba(0,0,0,.22);
+  }
+  .toast.show{opacity:1}
+  #emptyHint{
+    margin:6px 4px; padding:34px 24px; color:var(--muted);
+    border:2px dashed var(--line); border-radius:var(--radius); background:var(--tint-4); text-align:center;
+  }
+  #emptyHint .big{font-size:38px; margin-bottom:8px}
+
+  /* 让滚动条显式：粗一点，浅灰，免"看不出能不能滚" */
+  #leftCol::-webkit-scrollbar, #rightCol::-webkit-scrollbar{width:var(--scr-w); background:#e9edf5}
+  #leftCol::-webkit-scrollbar-thumb, #rightCol::-webkit-scrollbar-thumb{
+    background:#b9c2d6; border-radius:6px; border:2px solid #e9edf5;
+  }
+  #leftCol::-webkit-scrollbar-thumb:hover, #rightCol::-webkit-scrollbar-thumb:hover{background:#94a0bb}
+</style>
+</head>
+<body data-page-node-id="gFAUUsv3vfdHSBGXDNItSF">
+
+<header data-page-node-id="hxycRFRs5DfEBFYsFXxpx6">
+  <h1 data-page-node-id="D0xdlja3HD040psG6HDHG9"><span class="dot" data-page-node-id="MGKtnRo6QI6oArAt4CjtDK"></span>ST 预设编辑器 <span style="font-size:11px;font-weight:400;color:var(--faint)">· crpatchwork</span></h1>
+  <span class="pill" id="fileTag" title="已载入文件" data-page-node-id="vz9D4lsPjBv8zD5fZibi5U">未导入</span>
+  <div class="spacer" data-page-node-id="teT3qzbKofIYeciYUOqpOH"></div>
+  <label class="btn primary" for="fileOpen" data-page-node-id="HJiQwJAE8Ix5HfsFTlJKHt">📂 打开 JSON</label>
+  <input type="file" id="fileOpen" accept=".json,application/json" data-page-node-id="E1EpMKanzrAHrQb3R8nNYF">
+  <button class="btn" id="btnUndo" disabled title="Ctrl+Z" data-page-node-id="WwqUFARlTUKkNSaCxFhffE">↩ 撤销</button>
+  <button class="btn" id="btnRedo" disabled title="Ctrl+Y" data-page-node-id="Hd6xPdq2OwUno6xiBltiX6">↪ 重做</button>
+  <button class="btn" id="btnMulti" title="进入多选模式：可勾选多条，批量复制 / 删除。再次点击退出多选">☑ 多选</button>
+  <button class="btn" id="btnAddTop" title="新增到当前卡牌分支末尾" data-page-node-id="rqh530tsYcnCemCkFHy3HZ">＋ 新增</button>
+  <button class="btn" id="btnPaste" title="粘贴剪贴板里的已复制条目到当前分支末尾" data-page-node-id="rqh530tsYcnCemCkFHy3HZ">📋 粘贴</button>
+  <button class="btn" id="btnExport" data-page-node-id="dRFfkdGnTHxDj1Mp7kCoYP">⬇ 导出 JSON</button>
+  <button class="btn" id="btnTheme" title="切换 日间/夜间 模式" data-page-node-id="dRFfkdGnTHxDj1Mp7kCoYP">🌙</button>
+  <button class="btn" id="btnAbout" title="关于 / 免责声明" data-page-node-id="dRFfkdGnTHxDj1Mp7kCoYP">ⓘ</button>
+</header>
+
+<div id="dirtyBar" data-page-node-id="KD5kHqi5g2iNuF4MtcdfEc">⚠ 有未保存改动 —— 及时「导出 JSON」落盘（纯本地工具，刷新即丢）</div>
+
+<!-- 多选模式操作栏：仅进入多选时显示。左侧计数,右侧操作按钮集合区 -->
+<div id="multiBar">
+  <span class="mb-count">已选 <b id="multiCount">0</b> 条</span>
+  <div class="mb-spacer"></div>
+  <button class="btn" id="mbCopy" title="复制所有勾选条目（可切到别的页面粘贴）">⧉ 复制所选</button>
+  <button class="btn danger" id="mbDel" title="删除所有勾选条目（退出时若不想保留可再撤回）">🗑 删除所选</button>
+  <button class="btn primary" id="mbDone" title="确认本次改动,退出多选">✅ 完成</button>
+</div>
+
+<div class="workspace" data-page-node-id="0Djt27AwfhWn6BGDBVtXg4">
+  <div id="leftCol" data-page-node-id="cb7f5IsV6wnlGCKFS3io3f"></div>
+  <div id="rightCol" data-page-node-id="E44SWFBWViUUBgu0kzguFj">
+    <div class="placeholder" id="rightPlaceholder" data-page-node-id="MkrIepkzBBLHZ2xrrNWeC6">
+      <div class="ico" data-page-node-id="2yZd2tpAlG71hOUv9f2RXw">✍️</div>
+      <div data-page-node-id="z5goRJ8lxAz1bQFw0Sim2R">在左侧列表点一个条目的 <b data-page-node-id="3Z52685C9FCKUTWfMV3Lh3">✎</b>，这里出现详情编辑。</div>
+      <div style="font-size:12px" data-page-node-id="VJbxkC5dUmL4NVBBKDhr67">点击卡片本身 = 仅选中；点 ✎ = 编辑。启停开关在卡片上随时可点。</div>
+    </div>
+    <div id="detailWrap" style="display:none" data-page-node-id="m83xqBxnIL4EGF3D99ve3O">
+      <div id="detailHead" data-page-node-id="Cm0Jd4PV3OIEsyeNuwHRIv">
+        <h2 id="dHeadTitle" data-page-node-id="GqHCeaXLXnZyGZjYm77XJz">条目详情</h2>
+        <span class="badge" id="dHeadBranch" style="margin-left:4px" data-page-node-id="YcWRJormbFkexsv4NZUksb"></span>
+        <div class="spacer" data-page-node-id="hPSmZ1rpQqtlM8DAfuh5gb"></div>
+        <span style="font-size:11px;color:var(--faint)" id="dHeadId" data-page-node-id="AvQFPMuihwT76sooZSOkUc"></span>
+        <button class="btn" id="dClose" title="关闭(Esc)" data-page-node-id="lhjNxDAmNEIJsRD5XCKb7N">✕</button>
+      </div>
+      <div id="detailBody" data-page-node-id="MxHLrzU7w0Txudi68jZ6Cs"></div>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast" data-page-node-id="bpZF7E1e9XE6bKsf97Fdjj"></div>
+
+<!-- 关于 / 免责 轻弹层 -->
+<div id="aboutModal" style="display:none;position:fixed;inset:0;background:rgba(10,14,24,.5);z-index:98;align-items:center;justify-content:center">
+  <div style="background:var(--panel);color:var(--ink);max-width:560px;width:calc(100% - 40px);max-height:80vh;overflow:auto;border:1px solid var(--line);border-radius:14px;padding:22px 24px;box-shadow:0 20px 60px rgba(0,0,0,.35)">
+    <div style="display:flex;align-items:center;gap:10px;margin-bottom:6px">
+      <span style="font-size:18px;font-weight:700">crpatchwork</span>
+      <span style="font-size:11px;color:var(--faint)">· ST 预设拼布工坊 · v9</span>
+      <div class="spacer" style="flex:1"></div>
+      <button class="btn" id="aboutClose" style="flex:0 0 auto">✕</button>
+    </div>
+    <div style="font-size:12.5px;line-height:1.7;color:var(--muted);padding:4px 0 14px">
+      纯本地 · 离线可用 · 单文件。只改 <code>prompts</code>/<code>prompt_order</code>，其余原样保留。<br>
+      不联网、不上传、不采集。刷新即失，记得及时「导出 JSON」。
+    </div>
+    <div style="border-top:1px solid var(--line);padding-top:12px;font-size:12px;line-height:1.8;color:var(--muted)">
+      <b style="color:var(--dang)">免责声明</b>：本工具仅提供通用的本地 JSON 查看/编辑能力，不含任何成人、色情、政治敏感或非法内容，也不提供此类内容的来源或生成能力。由使用者导入/编辑/导出的 <code>.json</code> 文件完全由使用者自己负责；若含他人受版权保护的内容，责任在使用者。本工具按 "AS IS" 提供，作者不对任何直接/间接损害负责。详细见项目 <b>README</b>。
+    </div>
+  </div>
+</div>
+
+<script>
+"use strict";
+/* ============================================================
+   ST 预设编辑器 · crpatchwork · 列表 + 详情 双栏 (v9)
+   - 左列:扁平单一列表(无折叠),按 prompt_order 全局顺序铺开
+   - 右栏:点击 ✎ 进入编辑(名称/内容/role/位置模式/分支/深度/order/启停/marker)
+   - 位置模式:
+       0 = 相对(Relative) -> depth/order 酒馆自动算,本工具灰掉不让改
+       1 = 聊天中(In-chat)-> depth/order 可调
+   - 导出契约:仅重写 prompts + prompt_order,其余字段原样保留
+   ============================================================ */
+const $=s=>document.querySelector(s);
+const $$=s=>document.querySelectorAll(s);
+const CHAT_CID=100001;
+
+let S={
+  preset:null, branches:[], prompts:[], fileName:"",
+  mainCid:null,          // 当前"编辑对象"分支:左列只渲染它(角色卡上下文)。其它分支是酒馆系统/后台层,仅保留不渲染
+  selectedId:null, editId:null,
+  lockedSet:new Set(),   // 锁定条目 identifier: 见 isLockedId 注释
+  multiOn:false,         // 是否处于多选模式
+  picked:new Set(),      // 多选模式下勾选的 identifier 集合
+  multiDeleted:false,    // 本次多选是否做过删除(供退出时询问撤回)
+  multiDeletedN:0,       // 本次多选删除的条数
+};
+const P=id=>S.prompts.find(p=>String(p.identifier)===String(id));
+const isChatB=cid=>Number(cid)===CHAT_CID;
+function branchLabel(cid){return isChatB(cid)?"当前卡牌":"分支 #"+cid;}
+function mainBr(){return S.branches.find(b=>String(b.character_id)===String(S.mainCid));}
+/* 编辑对象应取哪个分支:
+   优先角色卡上下文(100001);否则取"含最多可编辑(非锁定)条目"的分支。 */
+function pickMainCid(){
+  const chat=S.branches.find(b=>b.isChat);if(chat)return chat.character_id;
+  let best=null,bestN=-1;
+  S.branches.forEach(b=>{
+    const editable=b.order.filter(o=>!isLockedId(o.identifier)).length;
+    if(editable>bestN){bestN=editable;best=b.character_id;}
+  });
+  return best??S.branches[0]?.character_id??CHAT_CID;
+}
+/* ST 保留外部槽位:marker=是 且 无 role 且 内容空 => 酒馆从人物卡/世界设定拉信息,不可编辑
+   覆盖 charDescription/charPersonality/scenario/personaDescription/Chat History/World Info/Chat Examples 等。
+   注意 main/nsfw/jailbreak 有 role=system + 内容,故不在此列,用户可改。 */
+function isStReserved(p){
+  if(!p)return false;
+  const empty=!p.content||String(p.content).trim()==="";
+  return !!p.marker && !p.role && empty;
+}
+/* 锁定判定:纯 order 锚点(order有但prompts无) 或 ST 保留槽位(marker+无role+空内容) */
+function isLockedId(id){
+  if(S.lockedSet.has(String(id)))return true;
+  const p=P(id);
+  return p?isStReserved(p):true;   // prompts 里也没有 => 也锁定
+}
+function guessName(p){return(p&&p.name)||(p&&p.role==="system"?"(system)":p&&p.role==="user"?"(user)":(p&&p.role||""))||"(未命名)";}
+function roleOf(p){const r=(p.role||"system").toLowerCase();return r==="user"?"user":r==="assistant"?"assistant":"system";}
+const esc=s=>String(s==null?"":s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+function idShort(id){return String(id).length>22?String(id).slice(0,10)+"…"+String(id).slice(-8):String(id);}
+
+function toast(m){const t=$("#toast");t.textContent=m;t.classList.add("show");clearTimeout(t._x);t._x=setTimeout(()=>t.classList.remove("show"),2000);}
+function branchOf(id){
+  // 同一 identifier 可能存在于系统层副本与主分支,解析时应优先主分支
+  const m=mainBr();
+  if(m&&m.order.some(o=>String(o.identifier)===String(id)))return m;
+  return S.branches.find(b=>b.order.some(o=>String(o.identifier)===String(id)));
+}
+
+/* ---------------- 导入 ---------------- */
+function importJson(text,fileName){
+  let d;try{d=JSON.parse(text);}catch{toast("❌ 不是有效 JSON");return;}
+  if(!Array.isArray(d.prompts)||!Array.isArray(d.prompt_order)){toast("❌ 非 ST 预设格式(缺 prompts/prompt_order)");return;}
+  S.preset=d;
+  S.prompts=d.prompts.map(p=>({...p}));
+  S.fileName=fileName||"preset.json";
+  S.selectedId=null; S.editId=null;
+  let poArr=d.prompt_order;
+  if(!poArr.length)poArr=[{character_id:CHAT_CID,order:[]}];
+  S.branches=poArr.map(b=>({
+    character_id:b.character_id, isChat:isChatB(b.character_id),
+    order:(b.order||[]).map(o=>({
+      identifier:o.identifier,
+      enabled:o.enabled!==false,
+      raw: P(o.identifier)?undefined:o,      // 锚点:保留原始 order 对象,导出原样写回
+    })),
+  }));
+  // 收集锁定集合(两类):
+  //  A) order 有但 prompts 无对象(纯锚点)
+  //  B) prompts 里是 ST 保留外部槽位(marker+无role+空内容,如 Char Personality/Scenario 等)
+  S.lockedSet=new Set();
+  S.branches.forEach(br=>br.order.forEach(o=>{
+    if(!P(o.identifier)) S.lockedSet.add(String(o.identifier));
+  }));
+  S.prompts.forEach(p=>{ if(isStReserved(p)) S.lockedSet.add(String(p.identifier)); });
+  S.mainCid=pickMainCid();   // 决定左列渲染哪个分支(角色卡上下文优先)
+  $("#fileTag").textContent=fileName||"已导入";
+  $("#fileTag").style.background="var(--ok-soft)";$("#fileTag").style.color="var(--ok)";
+  resetHistory();renderList();renderDetail();updateDirty(false);
+  const n=S.branches.reduce((a,b)=>a+b.order.length,0);
+  toast("✅ "+S.prompts.length+" 条 / "+S.branches.length+" 分支");
+}
+function openFile(file){const fr=new FileReader();fr.onload=()=>importJson(fr.result,file.name);fr.readAsText(file,"utf-8");}
+
+/* ---------------- 新增 / 删除 ---------------- */
+function makeNew(role,pos){
+  let n=1;const u=new Set(S.prompts.map(p=>p.identifier));let id="new-"+n;
+  while(u.has(id)){n++;id="new-"+n;}
+  return{identifier:id,name:"",role:role||"system",content:"",
+    injection_position:pos!=null?pos:1,injection_depth:4,injection_order:100,marker:false};
+}
+function addToBranch(cid,atIndex,openEdit){
+  const p=makeNew("system",1);S.prompts.push(p);
+  const br=S.branches.find(b=>String(b.character_id)===String(cid));if(!br){toast("无此分支");return;}
+  const idx=atIndex==null?br.order.length:atIndex;
+  br.order.splice(idx,0,{identifier:p.identifier,enabled:true});
+  pushHistory("add");renderList();
+  if(openEdit){S.selectedId=p.identifier;S.editId=p.identifier;renderDetail();scrollDetailTop();}
+  toast("已新增(记得填名字/内容)");
+}
+function addToChat(){const br=mainBr()||S.branches.find(b=>b.isChat)||S.branches[0];if(!br){toast("先导入");return;}addToBranch(br.character_id,null,true);}
+function deleteTarget(id){
+  if(!id)return;
+  if(isLockedId(id)){toast("🔒 该条为酒馆内部条目,不可删除");return;}
+  const p=P(id);const label=guessName(p);
+  if(!confirm('删除条目「'+label+'」?会同时从 prompts 与 order 移除。'))return;
+  S.prompts=S.prompts.filter(x=>String(x.identifier)!==String(id));
+  S.branches.forEach(br=>{br.order=br.order.filter(o=>String(o.identifier)!==String(id));});
+  S.lockedSet.delete(String(id));
+  if(S.selectedId===id)S.selectedId=null;
+  if(S.editId===id)S.editId=null;
+  pushHistory("del");renderList();renderDetail();updateDirty(true);toast("已删除");
+}
+
+/* ---------------- 复制 / 粘贴 (跨页面互抄) ----------------
+   通道设计(重要,蕾卡多开页面在本地 file:// 打开):
+   - 纯 file:// 下 navigator.clipboard 不存在,也读不了剪贴板。
+   - 所以主通道用 localStorage:同一浏览器内所有 file:// 页共享同一份存储,
+     A页"复制"写进 localStorage,切到B页"粘贴"读出来——跨标签页即时生效、无需权限。
+   - 顺带把内容也写进系统剪贴板(navigator.clipboard 或 execCommand 兜底),
+     万一你是从 http/localhost 打开的,或想贴到别处看,也算个备份。
+   - 粘贴顺序:先读 localStorage 本工具副本;没有才尝试系统剪贴板。
+   - 无论哪条通道,粘贴时 identifier 一律换成全新唯一 id,绝不撞现有条目。
+   ============================================================ */
+const CP_NS="stpreset-entry";           // localStorage 键
+const CP_MAGIC="x-stpreset-copy";       // 载荷标记,识别是不是本工具复制的
+/* 载荷兼容两种形态(向后兼容):
+   - 老/单条: {entry:{...}, enabled}
+   - 批量  : {entries:[{entry:{...},enabled}, ...]}
+   统一用 readPacked() 读取成数组,调用方不必关心形态。 */
+function packEntry(p,enabled){
+  return JSON.stringify({__cp:CP_MAGIC,v:1,enabled:enabled!==false,entry:{...p}});
+}
+function packEntries(list){   // list: [{p, enabled}]
+  return JSON.stringify({
+    __cp:CP_MAGIC,v:2,
+    entries:list.map(it=>({enabled:it.enabled!==false,entry:{...it.p}}))
+  });
+}
+function isPacked(o){
+  return o&&typeof o==="object"&&o.__cp===CP_MAGIC&&
+    ((o.entry&&typeof o.entry==="object")||Array.isArray(o.entries));
+}
+/* 统一读取:返回 [{entry, enabled}] 数组(单条也包成数组) */
+function readPacked(o){
+  if(!isPacked(o))return null;
+  if(Array.isArray(o.entries)&&o.entries.length){
+    return o.entries.filter(x=>x&&x.entry&&typeof x.entry==="object")
+                    .map(x=>({entry:x.entry,enabled:x.enabled!==false}));
+  }
+  if(o.entry&&typeof o.entry==="object")return [{entry:o.entry,enabled:o.enabled!==false}];
+  return null;
+}
+/* —— 系统剪贴板写入(尽力而为,失败不阻塞) —— */
+function sysClipWrite(text){
+  try{
+    if(navigator.clipboard&&window.isSecureContext&&navigator.clipboard.writeText){
+      return navigator.clipboard.writeText(text).then(()=>true).catch(()=>execCopy(text));
+    }
+    return Promise.resolve(execCopy(text));
+  }catch{return Promise.resolve(false);}
+}
+function execCopy(text){
+  try{
+    const ta=document.createElement("textarea");
+    ta.value=text;ta.style.position="fixed";ta.style.opacity="0";ta.style.top="-100px";
+    document.body.appendChild(ta);ta.focus();ta.select();
+    const ok=document.execCommand("copy");
+    document.body.removeChild(ta);return ok;
+  }catch{return false;}
+}
+/* —— localStorage 读写(跨标签页主通道) —— */
+function storeClip(entry,enabled){
+  try{localStorage.setItem(CP_NS,packEntry(entry,enabled));return true;}
+  catch{return false;}
+}
+function loadClip(){
+  try{const raw=localStorage.getItem(CP_NS);if(!raw)return null;
+    const o=JSON.parse(raw);return isPacked(o)?o:null;}
+  catch{return null;}
+}
+/* —— 批量复制(多选):把多条一起存进 localStorage + 剪贴板 —— */
+function storeClipBatch(list){
+  try{localStorage.setItem(CP_NS,packEntries(list));return true;}catch{return false;}
+}
+function copyTargets(ids){
+  const list=[];
+  ids.forEach(id=>{
+    const p=P(id);
+    if(!p||isLockedId(id))return;          // 锁定条跳过(理論上已禁勾选)
+    let enabled=true;const br=branchOf(id);
+    if(br){const oo=br.order.find(o=>String(o.identifier)===String(id));if(oo)enabled=oo.enabled!==false;}
+    list.push({p,enabled});
+  });
+  if(!list.length){toast("没有可复制的条目");return;}
+  const okStore=storeClipBatch(list);
+  sysClipWrite(packEntries(list));          // 尽力而为
+  toast(okStore
+    ? "⧉ 已复制 "+list.length+" 条 —— 切到另一个打开的页面,点「📋 粘贴」可一次贴入"
+    : "⧉ 已复制 "+list.length+" 条(仅剪贴板;localStorage 被禁则跨页面可能失效)");
+}
+/* 生成不与现有条目冲突的新 identifier */
+function genPasteId(prefix){
+  prefix=prefix||"copied-";
+  const used=new Set();
+  S.prompts.forEach(p=>used.add(String(p.identifier)));
+  S.branches.forEach(br=>br.order.forEach(o=>used.add(String(o.identifier))));
+  let n=1,cand=prefix+n;
+  while(used.has(cand)){n++;cand=prefix+n;}
+  return cand;
+}
+/* —— 复制:把一条可编辑条目标记进 localStorage + 系统剪贴板 —— */
+function copyTarget(id){
+  const p=P(id);
+  if(!p){toast("找不到该条");return;}
+  if(isLockedId(id)){toast("🔒 酒馆内部条目不可复制");return;}
+  let enabled=true;const br=branchOf(id);
+  if(br){const oo=br.order.find(o=>String(o.identifier)===String(id));if(oo)enabled=oo.enabled!==false;}
+  const okStore=storeClip(p,enabled);
+  sysClipWrite(packEntry(p,enabled));   // 尽力而为
+  toast(okStore
+    ? "⧉ 已复制「"+guessName(p)+"」——切到另一个打开的页面,点「📋 粘贴」即可"
+    : "⧉ 已复制(仅剪贴板;localStorage 被禁则跨页面可能失效)");
+}
+/* —— 粘贴:支持单条/批量,统一插到当前主分支末尾 —— */
+function pasteFromSource(o){
+  if(!S.preset){toast("先导入一个预设再粘贴");return;}
+  const br=mainBr();if(!br){toast("无主分支可粘贴");return;}
+  const items=readPacked(o);
+  if(!items||!items.length){toast("剪贴板里没有可用的条目");return;}
+  // 过滤掉酒馆内部槽位(防御:理论复制的都是可编辑条)
+  const usable=items.filter(it=>!isStReserved(it.entry));
+  if(!usable.length){toast("🔒 酒馆内部槽位不可粘贴");return;}
+  const firstIds=[];
+  usable.forEach(it=>{
+    const p=JSON.parse(JSON.stringify(it.entry));
+    p.identifier=genPasteId("copied-");
+    // 字段缺失兜底,免得贴进来少字段导致显示/导出怪
+    if(p.role==null)p.role="system";
+    if(p.injection_position==null)p.injection_position=0;
+    if(p.injection_depth==null)p.injection_depth=4;
+    if(p.injection_order==null)p.injection_order=100;
+    if(p.marker==null)p.marker=false;
+    if(p.name==null)p.name="";
+    if(p.content==null)p.content="";
+    S.prompts.push(p);
+    br.order.push({identifier:p.identifier,enabled:it.enabled!==false});
+    firstIds.push(p.identifier);
+  });
+  pushHistory("paste");
+  // 批量粘贴:选中第一条并打开编辑(多条时其余静静躺在末尾)
+  S.selectedId=firstIds[0];S.editId=firstIds[0];
+  renderList();renderDetail();scrollDetailTop();updateDirty(true);
+  toast(usable.length>1
+    ? "📋 已粘贴 "+usable.length+" 条到分支末尾(选中了第一条)"
+    : "📋 已粘贴「"+guessName(S.prompts.find(x=>x.identifier===firstIds[0]))+"」到分支末尾");
+}
+async function pasteFromClipboard(){
+  if(!S.preset){toast("先导入一个预设再粘贴");return;}
+  const fromLS=loadClip();
+  if(fromLS){pasteFromSource(fromLS);return;}
+  // localStorage 没有才尝试系统剪贴板(仅 secure context 可行)
+  let text=null;
+  try{
+    if(navigator.clipboard&&navigator.clipboard.readText&&window.isSecureContext){
+      text=await navigator.clipboard.readText();
+    }
+  }catch{text=null;}
+  if(!text){toast("没有可粘贴的条目 —— 请先到来源页面点卡片上的 ⧉ 复制一次");return;}
+  try{
+    const o=JSON.parse(text);
+    if(isPacked(o))pasteFromSource(o);else toast("剪贴板里不是本工具复制的条目");
+  }catch{toast("剪贴板里不是本工具复制的条目");}
+}
+
+/* ---------------- 多选模式 ----------------
+   交互设计(蕾卡定稿):
+   - 顶部「☑ 多选」:进入多选;进入后再点 = 以"取消"方式退出
+     (若本次多选删过条目,弹窗询问是否撤回——后悔药)。
+   - multiBar「✅ 完成」:保留删除修改,退出多选。
+   - 批量删除只入一次历史栈,撤回时一次 undo 全回来。
+   ============================================================ */
+function pickedArr(){return Array.from(S.picked||[]);}
+function refreshMultiBar(){
+  const n=pickedArr().length;
+  const cnt=$("#multiCount");if(cnt)cnt.textContent=String(n);
+  const dis=n===0;
+  ["#mbCopy","#mbDel"].forEach(s=>{const el=$(s);if(el)el.disabled=dis;});
+}
+function enterMulti(){
+  if(!S.preset){toast("先导入一个预设");return;}
+  S.multiOn=true;S.picked=S.picked||new Set();
+  S.multiDeleted=false;S.multiDeletedN=0;    // 本次多选是否删过/删了几条(供退出时询问撤回)
+  document.body.classList.add("multi-on");
+  $("#multiBar").classList.add("show");
+  const b=$("#btnMulti");if(b){b.textContent="☑ 多选进行中";b.classList.add("primary");}
+  refreshMultiBar();renderList();
+}
+function cleanupMulti(){
+  S.multiOn=false;S.picked=new Set();S.multiDeleted=false;S.multiDeletedN=0;
+  document.body.classList.remove("multi-on");
+  $("#multiBar").classList.remove("show");
+  const b=$("#btnMulti");if(b){b.textContent="☑ 多选";b.classList.remove("primary");}
+  renderList();renderDetail();
+}
+function toggleMulti(){
+  if(!S.multiOn){enterMulti();return;}
+  // 再点「多选进行中」= 以"取消"方式退出:若本次删过,询问是否撤回(后悔药)
+  if(S.multiDeleted){
+    const yes=confirm("本次多选中删除了 "+(S.multiDeletedN||"")+" 条,是否撤回这些删除?\n\n[确定] = 撤回删除并退出多选\n[取消] = 保留删除并退出多选");
+    if(yes){undo();toast("已撤回本次多选里的删除");}
+  }
+  cleanupMulti();
+}
+function togglePick(id){
+  if(!S.picked)S.picked=new Set();
+  const k=String(id);
+  if(S.picked.has(k))S.picked.delete(k);else S.picked.add(k);
+  refreshMultiBar();renderList();
+}
+function multiCopy(){
+  const ids=pickedArr();
+  if(!ids.length){toast("先勾选要复制的条目");return;}
+  copyTargets(ids);
+}
+function multiDelete(){
+  const ids=pickedArr().filter(id=>!isLockedId(id));
+  if(!ids.length){toast("没有可删除的条目(酒馆内部槽位不可删)");return;}
+  const n=ids.length;
+  if(!confirm("删除选中的 "+n+" 条?会同时从 prompts 与 order 移除。\n\n(退出多选时仍会再询问是否撤回)"))return;
+  const kill=new Set(ids.map(String));
+  S.prompts=S.prompts.filter(x=>!kill.has(String(x.identifier)));
+  S.branches.forEach(br=>{br.order=br.order.filter(o=>!kill.has(String(o.identifier)));});
+  ids.forEach(id=>{
+    S.lockedSet&&S.lockedSet.delete(String(id));
+    if(S.selectedId===id)S.selectedId=null;
+    if(S.editId===id)S.editId=null;
+  });
+  pushHistory("del-multi");                 // 关键:整批只入一次历史栈
+  S.multiDeleted=true;S.multiDeletedN=n;    // 记录:退出时询问撤回
+  S.picked=new Set();
+  refreshMultiBar();renderList();renderDetail();updateDirty(true);
+  toast("已删除 "+n+" 条(退出多选时可选择撤回)");
+}
+
+/* ---------------- 字段编辑 ---------------- */
+function setEnabled(id,on){
+  if(isLockedId(id)){toast("🔒 酒馆内部条目已锁定,不可切换");renderList();return;}
+  const br=branchOf(id);
+  if(br){const o=br.order.find(o=>String(o.identifier)===String(id));if(o)o.enabled=!!on;}
+  const p=P(id);if(p)p.enabled=!!on;
+  pushHistory("enab");renderList();renderDetail();
+}
+function setRole(id,r){const p=P(id);if(!p)return;p.role=r;touchReflect();}
+function setDepth(id,v){
+  const p=P(id);if(!p)return;
+  if(parseInt(p.injection_position,10)!==1)return;   // 相对模式锁定
+  let n=parseInt(v,10);if(isNaN(n))n=4;p.injection_depth=Math.max(0,Math.min(6,n));touchReflect();
+}
+function setInjOrder(id,v){
+  const p=P(id);if(!p)return;
+  if(parseInt(p.injection_position,10)!==1)return;
+  let n=parseInt(v,10);if(isNaN(n))n=100;p.injection_order=n;touchReflect();
+}
+function setPosition(id,v){
+  const p=P(id);if(!p)return;
+  let n=parseInt(v,10);if(isNaN(n))n=0;p.injection_position=n===1?1:0;
+  // 切到相对时,depth/order 留酒馆自动算的值不动;切到聊天中保留可改
+  touchReflect();
+}
+function setName(id,v){const p=P(id);if(!p)return;p.name=v;touchReflect();}
+function setContent(id,v){const p=P(id);if(!p)return;p.content=v;touchReflect();}
+let touchT;
+function touchReflect(){clearTimeout(touchT);touchT=setTimeout(()=>{renderList();renderDetail();updateDirty(true);},80);}
+
+/* ---------------- 分支内移动 ---------------- */
+function moveInBranch(id,dir){
+  const br=branchOf(id);if(!br)return;
+  const i=br.order.findIndex(o=>String(o.identifier)===String(id));if(i<0)return;
+  const j=i+dir;if(j<0||j>=br.order.length)return;
+  const [it]=br.order.splice(i,1);br.order.splice(j,0,it);
+  pushHistory("mv");renderList();renderDetail();updateDirty(true);
+}
+function setOrderNum(id,val){
+  const br=branchOf(id);if(!br)return;
+  let t=parseInt(val,10)-1;const cur=br.order.findIndex(o=>String(o.identifier)===String(id));
+  if(isNaN(t))t=0;if(t<0)t=0;if(t>=br.order.length)t=br.order.length-1;
+  if(t===cur)return;
+  const[it]=br.order.splice(cur,1);br.order.splice(t,0,it);
+  pushHistory("ordnum");renderList();renderDetail();updateDirty(true);
+}
+
+/* ---------------- 拖拽换序(同分支内) ---------------- */
+let dragSrc=null,dragOverEl=null,dragHalf=null;
+function onDragStart(e){
+  const card=e.target.closest(".card");if(!card)return;
+  dragSrc={cid:card.dataset.cid,pid:card.dataset.pid};
+  card.classList.add("dragging");
+  e.dataTransfer.effectAllowed="move";e.dataTransfer.setData("text/plain",card.dataset.pid);
+}
+function onDragOver(e){
+  const card=e.target.closest(".card");if(!card||!dragSrc)return;
+  if(card.dataset.cid!==dragSrc.cid)return;
+  e.preventDefault();e.dataTransfer.dropEffect="move";
+  const rect=card.getBoundingClientRect();
+  const half=(e.clientY-rect.top)<rect.height/2;
+  card.classList.toggle("drag-over-top",half);
+  card.classList.toggle("drag-over-bot",!half);
+  dragOverEl=card;dragHalf=half;
+}
+function onDragLeave(e){const c=e.target.closest(".card");if(c)c.classList.remove("drag-over-top","drag-over-bot");}
+function cleanDrag(){dragSrc=null;dragOverEl=null;$$(".card").forEach(c=>c.classList.remove("dragging","drag-over-top","drag-over-bot"));}
+function onDrop(e){
+  e.preventDefault();
+  const card=e.target.closest(".card");
+  if(card)card.classList.remove("drag-over-top","drag-over-bot");
+  if(!dragSrc||!card||dragSrc.cid!==card.dataset.cid||dragSrc.pid===card.dataset.pid)return cleanDrag();
+  const br=S.branches.find(b=>String(b.character_id)===dragSrc.cid);if(!br)return cleanDrag();
+  const from=br.order.findIndex(o=>String(o.identifier)===dragSrc.pid);
+  const target=br.order.findIndex(o=>String(o.identifier)===card.dataset.pid);
+  let to=target;
+  if(dragHalf){to=(from<target)?target-1:target;}else{to=(from<target)?target:target+1;}
+  to=Math.max(0,Math.min(br.order.length-1,to));
+  if(from===to)return cleanDrag();
+  const[it]=br.order.splice(from,1);br.order.splice(to,0,it);
+  dragSrc=null;pushHistory("drag");renderList();renderDetail();updateDirty(true);
+}
+function onDragEnd(){cleanDrag();}
+function onListDrop(e){
+  const cl=e.target.closest(".cardlist");if(!cl||!dragSrc)return;
+  if(e.target.closest(".card"))return;
+  if(cl.dataset.cid!==dragSrc.cid)return;
+  const br=S.branches.find(b=>String(b.character_id)===cl.dataset.cid);if(!br)return;
+  const from=br.order.findIndex(o=>String(o.identifier)===dragSrc.pid);if(from<0)return;
+  const[it]=br.order.splice(from,1);br.order.push(it);
+  dragSrc=null;pushHistory("drag");renderList();renderDetail();updateDirty(true);
+}
+function onListDragOver(e){
+  const cl=e.target.closest(".cardlist");if(!cl||!dragSrc)return;
+  if(!e.target.closest(".card")&&cl.dataset.cid===dragSrc.cid){e.preventDefault();e.dataTransfer.dropEffect="move";}
+}
+
+/* ---------------- 渲染: 左列 (扁平) ---------------- */
+function renderList(){
+  const col=$("#leftCol");
+  if(!S.preset){
+    col.innerHTML=`<div id="emptyHint"><div class="big">🗂️</div><p>把 <b>SillyTavern 预设 JSON</b> 拖进窗口，或点右上「打开 JSON」。</p><p style="font-size:12px;color:var(--faint)">只改 prompts / prompt_order,其余原样保留。<br>左列卡片可<b>拖拽换序</b>(同分支内);点卡片=选中;点 <b>✎</b>=右侧编辑。</p></div>`;
+    return;
+  }
+  let html="";
+  // 顶部信息条:编辑对象(角色卡上下文) + 隐藏分支提示(可折叠)
+  const main=mainBr();
+  const otherB=S.branches.filter(b=>String(b.character_id)!==String(S.mainCid));
+  const mainCount=main?main.order.length:0;
+  html+=`<div class="listbanner"><b>${esc(branchLabel(S.mainCid))}</b>
+    <span class="badge cur">编辑目标</span><span class="cnt">${mainCount} 条</span></div>`;
+  if(otherB.length){
+    const otherInfo=otherB.map(b=>`${b.isChat?'当前卡牌':'分支 #'+b.character_id}(${b.order.length}条)`).join("、");
+    html+=`<div style="margin:0 4px 6px;font-size:11px;color:var(--faint)">
+      <span style="cursor:pointer;user-select:none" id="sysFold">▸ 另有 ${otherB.length} 个酒馆后台分支已原样保留，不参与编辑</span>
+      <div id="sysFoldBody" style="display:none;margin-top:4px;padding:6px 8px;background:var(--bg2);border:1px dashed var(--line);border-radius:6px;line-height:1.7">${esc(otherInfo)}<br><span style="color:var(--muted)">这些是酒馆加载预设时的系统/后台层，你在酒馆编辑面板看不到它们。导入导出均原样保留，不显示在左侧以免干扰你的连贯顺序编辑。</span></div>
+    </div>`;
+  }
+  const br=main;
+  html+=`<div class="cardlist" data-cid="${esc(br.character_id)}">`;
+  br.order.forEach((o,oi)=>{
+      const sel=S.selectedId===o.identifier;
+      const pLocked=P(o.identifier);   // ST保留槽位可能在prompts里有对象
+      const locked=isLockedId(o.identifier);
+      // —— 锁定条目(纯锚点 或 ST保留外部槽位):只读显示,不可编辑 ——
+      if(locked){
+        const dispName=pLocked?(pLocked.name||String(o.identifier)):String(o.identifier);
+        const sub=pLocked?"酒馆内部槽位 · 由人物卡/世界设定填充 · 锁定":"酒馆内部锚点 · 由外部填充 · 锁定";
+        html+=`<div class="card anchor ${o.enabled?'':'offcard'} ${sel?'sel':''}"
+          data-pid="${esc(o.identifier)}" data-cid="${esc(br.character_id)}" data-anchor="1"
+          draggable="true" title="🔒 内容锁定(由酒馆从人物卡/世界设定填充,不可编辑)· 可拖拽换序">
+          <span class="grip" style="opacity:.55" title="内容锁定 · 可拖拽换序">⠿</span>
+          <span class="ordpill">${oi+1}</span>
+          <span class="dchip dna">🔒</span>
+          <span class="rpt system" style="opacity:.5"></span>
+          <div class="mid">
+            <span class="nm"><span style="color:var(--sys)">🔒</span> ${esc(dispName)}</span>
+            <span class="sub" style="font-style:italic">${sub}</span>
+          </div>
+          <span style="font-size:10px;color:var(--faint)">${o.enabled?'':'停用'}</span>
+        </div>`;
+        return;
+      }
+      const p=pLocked;if(!p)return;
+      const name=guessName(p);
+      const role=roleOf(p);
+      const pos=parseInt(p.injection_position,10);
+      const posRel=pos!==1;
+      const dep=parseInt(p.injection_depth,10);const depn=isNaN(dep)?0:dep;
+      const dcls=posRel?"dna":(depn<=0?"d0":depn===1?"d1":depn===2?"d2":depn===3?"d3":"d4");
+      const dtext=posRel?"—":String(depn);
+      const preview=(p.content||"").replace(/\s+/g," ").slice(0,42);
+      const posBadge=posRel?'<span style="font-size:9.5px;color:var(--usr);background:var(--usr-soft);padding:0 4px;border-radius:3px;margin-left:4px">相对</span>':'<span style="font-size:9.5px;color:var(--sys);background:var(--sys-soft);padding:0 4px;border-radius:3px;margin-left:4px">聊天中</span>';
+      const picked=(S.multiOn&&S.picked&&S.picked.has(String(p.identifier)))?"multi-picked":"";
+      const mcb=(S.multiOn&&!isLockedId(p.identifier))
+        ?`<input type="checkbox" class="mcheck" data-pick="${esc(p.identifier)}" ${picked?'checked':''} title="勾选此条">`
+        :(S.multiOn?`<span class="mcheck" style="visibility:hidden"></span>`:"");
+      html+=`<div class="card ${o.enabled?'':'offcard'} ${sel?'sel':''} ${posRel?'posrel':''} ${picked}"
+        draggable="true" data-pid="${esc(p.identifier)}" data-cid="${esc(br.character_id)}">
+        ${mcb}
+        <span class="grip" title="拖拽换序(同分支内)">⠿</span>
+        <span class="ordpill" title="${posRel?'相对模式下 order 由酒馆自动算':'本条在分支内 order 序号'}">${oi+1}</span>
+        <span class="dchip ${dcls}" title="${posRel?'相对模式,depth 不可改':'注入深度 '+depn}">${dtext}</span>
+        <span class="rpt ${role}" title="role: ${esc((p.role||'system'))}"></span>
+        <div class="mid">
+          <span class="nm${p.name?'':' empty'}">${esc(name)}${posBadge}</span>
+          <span class="sub">${p.marker?'[分隔] ':''}${esc(preview||'<空内容>')}</span>
+        </div>
+        <label class="switch" title="${o.enabled?'启用中':'已停用'} · 点击切换">
+          <input type="checkbox" ${o.enabled?'checked':''} data-enable="${esc(p.identifier)}"><span class="sl"></span>
+        </label>
+        <button class="copybtn" data-copy="${esc(p.identifier)}" title="复制此条(可切到另一页面粘贴)">⧉</button>
+        <button class="editbtn" data-edit="${esc(p.identifier)}" title="编辑详情">✎</button>
+        <button class="delbtn" data-del="${esc(p.identifier)}" title="删除此条">🗑</button>
+      </div>`;
+    });
+  html+=`</div>`;
+  col.innerHTML=html;
+
+  // 隐藏分支折叠
+  const sysF=$("#sysFold");
+  if(sysF)sysF.addEventListener("click",()=>{const b=$("#sysFoldBody");if(!b)return;const open=b.style.display!=="none";b.style.display=open?"none":"block";sysF.textContent=open?"▸ 另有酒馆后台分支已原样保留,不参与编辑":"▾ 另有酒馆后台分支已原样保留,不参与编辑";});
+
+  // 绑定 (锚点卡不绑拖拽/开关/编辑)
+  $$(".card:not([data-anchor])").forEach(c=>{
+    c.addEventListener("click",ev=>{
+      if(ev.target.closest(".switch")||ev.target.closest(".editbtn")||ev.target.closest(".grip")||ev.target.closest(".copybtn")||ev.target.closest(".delbtn"))return;
+      // 多选模式:点卡片 = 切换勾选(不进编辑);复选框自身由 change 处理,这里跳过
+      if(S.multiOn){
+        if(ev.target.classList&&ev.target.classList.contains("mcheck"))return;
+        togglePick(c.dataset.pid);return;
+      }
+      S.selectedId=c.dataset.pid;renderList();
+    });
+    c.addEventListener("dragstart",onDragStart);
+    c.addEventListener("dragover",onDragOver);
+    c.addEventListener("dragleave",onDragLeave);
+    c.addEventListener("drop",onDrop);
+    c.addEventListener("dragend",onDragEnd);
+  });
+  // 锚点卡:点击 = 选中 + 右侧显示锁定说明(内容不可编辑);但可拖拽换序
+  $$(".card[data-anchor]").forEach(c=>{
+    c.addEventListener("click",ev=>{
+      if(ev.target.closest(".switch")||ev.target.closest(".editbtn")||ev.target.closest(".grip"))return;
+      S.selectedId=c.dataset.pid;S.editId=c.dataset.pid;
+      renderList();renderDetail();
+    });
+    c.addEventListener("dragstart",onDragStart);
+    c.addEventListener("dragover",onDragOver);
+    c.addEventListener("dragleave",onDragLeave);
+    c.addEventListener("drop",onDrop);
+    c.addEventListener("dragend",onDragEnd);
+  });
+  $$(".cardlist").forEach(cl=>{
+    cl.addEventListener("dragover",onListDragOver);
+    cl.addEventListener("drop",onListDrop);
+  });
+  $$(".editbtn").forEach(b=>b.addEventListener("click",ev=>{ev.stopPropagation();
+    S.selectedId=b.dataset.edit;S.editId=b.dataset.edit;
+    renderList();renderDetail();scrollDetailTop();
+  }));
+  $$("[data-copy]").forEach(b=>b.addEventListener("click",ev=>{ev.stopPropagation();copyTarget(b.dataset.copy);}));
+  $$("[data-del]").forEach(b=>b.addEventListener("click",ev=>{ev.stopPropagation();deleteTarget(b.dataset.del);}));
+  $$("[data-enable]").forEach(ch=>ch.addEventListener("change",ev=>{ev.stopPropagation();setEnabled(ch.dataset.enable,ch.checked);}));
+  // 多选复选框(change 里处理勾选;stopPropagation 避免再触发卡片 click)
+  $$("[data-pick]").forEach(ch=>ch.addEventListener("change",ev=>{
+    ev.stopPropagation();togglePick(ch.dataset.pick);
+  }));
+}
+
+function scrollDetailTop(){const w=$("#detailWrap");if(w)w.scrollTop=0;}
+
+/* ---------------- 渲染: 右栏详情 ---------------- */
+function renderDetail(){
+  const ph=$("#rightPlaceholder"),wrap=$("#detailWrap");
+  const id=S.editId;
+  if(!S.preset||!id){ph.style.display="flex";wrap.style.display="none";return;}
+  ph.style.display="none";wrap.style.display="block";
+
+  // 锁定条目:只读锁定视图(两类:纯order锚点,或 ST保留外部槽位)
+  if(isLockedId(id)){
+    const pLocked=P(id);
+    const br=branchOf(id);
+    const oo=br?br.order.find(o=>String(o.identifier)===String(id)):null;
+    const dispName=pLocked?(pLocked.name||String(id)):String(id);
+    $("#dHeadTitle").textContent=dispName||String(id);
+    $("#dHeadId").textContent="id "+idShort(id);
+    $("#dHeadBranch").textContent="酒馆内部 · 锁定";
+    $("#dHeadBranch").className="badge sys";
+    const rawText=oo&&oo.raw?JSON.stringify(oo.raw,null,2):JSON.stringify({identifier:id,enabled:oo?oo.enabled:true});
+    const reason=pLocked
+      ? `它在 <code>prompts</code> 里有占位对象，但带 <b>marker</b> 且无 <b>role</b>、内容为空 —— 属于酒馆保留的<b>外部拉取槽位</b>(对应人物卡里的角色描述/性格/场景、世界设定、聊天历史等)。`
+      : `它不在 <code>prompts</code> 里，是酒馆用来<b>从其它地方(人物卡/世界设定/上下文等)拉取信息</b>的占位条目。`;
+    const body=$("#detailBody");
+    body.innerHTML=`
+      <div class="fieldnote locknote" style="font-size:13px;padding:14px;background:var(--sys-soft);border-color:var(--sys)">
+        <div style="font-size:15px;font-weight:700;margin-bottom:6px">🔒 此条目由酒馆管理，已锁定</div>
+        ${reason}
+        <b>由酒馆自动填充，无需也不应编辑其内容</b>，否则导回去可能出错。本工具已锁定其内容/删除/启停；
+        <b>但左列可拖拽调整它的顺序</b>，拖拽只改 order、不改字段，安全。
+      </div>
+      <div class="fg">
+        <label>identifier <span class="hint">只读</span></label>
+        <div style="font-family:monospace;background:var(--tint);border:1px solid var(--line);border-radius:8px;padding:8px 10px;font-size:12px">${esc(id)}</div>
+      </div>
+      <div class="fg">
+        <label>该条字段 <span class="hint">只读</span></label>
+        <pre style="font-family:monospace;background:var(--tint-2);border:1px solid var(--line);border-radius:8px;padding:10px;font-size:12px;overflow:auto;margin:0;max-height:220px">${esc(pLocked?JSON.stringify(pLocked,(k,v)=>k==="content"?"(由外部源填充,此处略)":v,2):rawText)}</pre>
+      </div>
+      <div class="fldiv switchrow">
+        <span class="lbl">启用状态</span>
+        <span style="color:${oo&&oo.enabled?'var(--ok)':'var(--faint)'}">${oo&&oo.enabled?'启用中':'停用'} (只读)</span>
+      </div>`;
+    return;
+  }
+
+  const p=P(id);
+  const br=branchOf(id);
+  const role=roleOf(p);
+  const pos=parseInt(p.injection_position,10);const posRel=pos!==1;
+  const dep=parseInt(p.injection_depth,10);const depn=isNaN(dep)?0:Math.max(0,Math.min(6,dep));
+  const injOrder=parseInt(p.injection_order,10);const iord=isNaN(injOrder)?100:injOrder;
+  const orderIdx=br?br.order.findIndex(o=>String(o.identifier)===String(id)):-1;
+
+  $("#dHeadTitle").textContent=guessName(p)||"未命名条目";
+  $("#dHeadId").textContent="id "+idShort(p.identifier);
+  $("#dHeadBranch").textContent=br?(br.isChat?"当前卡牌":"分支 #"+br.character_id):"未挂载";
+  $("#dHeadBranch").className="badge "+(br&&br.isChat?"cur":"sys");
+
+  const body=$("#detailBody");
+  body.innerHTML=`
+    <div class="fg">
+      <label>名称 <span class="hint">留空自动推断 role</span></label>
+      <input class="inp" id="edName" value="${esc(p.name||"")}" placeholder="(未命名)">
+    </div>
+    <div class="fg">
+      <label>内容 <span class="hint">实际注入的提示词文本</span></label>
+      <textarea class="txa" id="edContent" spellcheck="false">${esc(p.content||"")}</textarea>
+    </div>
+    <div class="row2">
+      <div class="fg">
+        <label>角色 role</label>
+        <div class="role-seg">
+          <button data-r="system" data-setrole="${esc(p.identifier)}" class="${role==='system'?'active':''}">system</button>
+          <button data-r="user" data-setrole="${esc(p.identifier)}" class="${role==='user'?'active':''}">user</button>
+          <button data-r="assistant" data-setrole="${esc(p.identifier)}" class="${role==='assistant'?'active':''}">assistant</button>
+        </div>
+      </div>
+    </div>
+    <div class="fldiv">
+      <div class="fg">
+        <label>位置模式 injection_position</label>
+        <div class="possel" id="edPosSeg">
+          <button data-pos="0" class="${posRel?'active':''}">相对 (Relative)</button>
+          <button data-pos="1" class="${!posRel?'active':''}">聊天中 (In-chat)</button>
+        </div>
+        <div class="depthdesc">
+          <b>相对</b>:条目注入到系统提示层;<b>depth</b> 与 <b>order</b> 由酒馆按顺序自动计算(默认 depth=4, order=100),本工具已锁定不让改。<br>
+          <b>聊天中</b>:条目注入到聊天消息流;<b>depth</b> 控制插在第几条,<b>order</b> 控制同深度内排序,可手动调。
+        </div>
+      </div>
+    </div>
+    <div class="fldiv" id="edDepthRow">
+      <div class="fg">
+        <label>注入深度 injection_depth <span class="hint">仅"聊天中"模式</span></label>
+        <div class="chiprow" id="edDepthChips">
+          ${[0,1,2,3,4,5,6].map(d=>`<span class="chip ${depn===d?'active':''}" data-depth="${esc(p.identifier)}" data-v="${d}">${d}</span>`).join("")}
+        </div>
+        <div class="depthdesc">${posRel?'此模式 depth 由酒馆自动算(默认 4),不可改':(DEPTH_TIP(depn))}</div>
+      </div>
+    </div>
+    <div class="fldiv" id="edInjOrderRow">
+      <div class="row2">
+        <div class="fg">
+          <label>注入顺序 injection_order <span class="hint">同深度内排序</span></label>
+          <div class="posrow">
+            <input class="inp" id="edInjOrder" type="number" step="1" value="${iord}" ${posRel?'disabled':''}>
+            <span class="hint" style="font-size:11px">${posRel?'相对模式锁定':'数字越小越靠前'}</span>
+          </div>
+        </div>
+        <div class="fg">
+          <label>分支内 order 序号 <span class="hint">拖拽改变 = 此数同步</span></label>
+          <div class="posrow">
+            <input class="inp" id="edOrder" type="number" min="1" step="1" value="${orderIdx+1}">
+            <button class="btn" id="edUp">↑</button>
+            <button class="btn" id="edDown">↓</button>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="fldiv">
+      <div class="row2" style="justify-content:flex-end">
+        <label>在此条后新增</label>
+        <button class="btn" id="edNewBelow">＋ 插入新条目</button>
+      </div>
+    </div>
+    <div class="fldiv switchrow">
+      <label class="switch"><input type="checkbox" id="edEnable" ${(br?br.order.find(o=>String(o.identifier)===String(id)).enabled:p.enabled)!==false?'checked':''}><span class="sl"></span></label>
+      <span class="lbl">${((br?br.order.find(o=>String(o.identifier)===String(id)).enabled:p.enabled)!==false)?'启用':'停用'}</span>
+      <span class="hint">关闭=该条不注入</span>
+    </div>
+    <div class="fieldnote">
+      ${p.marker?'⚠ 此条是 <b>marker 分隔点</b>,仅作排序标记,通常不改内容。':'<label style="display:flex;align-items:center;gap:6px;cursor:pointer"><input type="checkbox" id="edMarker"> 设为 marker 分隔点(仅排序用)</label>'}
+    </div>
+    <div style="display:flex;gap:8px;padding-top:4px">
+      <button class="btn" id="edCopy">⧉ 复制此条</button>
+      <button class="btn danger" id="edDelete">🗑 删除此条</button>
+    </div>
+  `;
+
+  // 锁定/解锁(相对模式下深度order区段)
+  applyPositionLock(body, posRel);
+
+  // 字段
+  $("#edName").addEventListener("input",ev=>setName(p.identifier,ev.target.value));
+  $("#edContent").addEventListener("input",ev=>setContent(p.identifier,ev.target.value));
+  $$("[data-setrole]").forEach(b=>b.addEventListener("click",ev=>setRole(p.identifier,b.dataset.r)));
+  $$("[data-pos]").forEach(b=>b.addEventListener("click",ev=>setPosition(p.identifier,b.dataset.pos)));
+  $$(".chip[data-depth]").forEach(ch=>ch.addEventListener("click",ev=>setDepth(p.identifier,ch.dataset.v)));
+  $("#edInjOrder").addEventListener("change",ev=>setInjOrder(p.identifier,ev.target.value));
+  $("#edOrder").addEventListener("change",ev=>setOrderNum(p.identifier,ev.target.value));
+  $("#edUp").addEventListener("click",ev=>{ev.stopPropagation();moveInBranch(p.identifier,-1);});
+  $("#edDown").addEventListener("click",ev=>{ev.stopPropagation();moveInBranch(p.identifier,1);});
+  $("#edEnable").addEventListener("change",ev=>{ev.stopPropagation();setEnabled(p.identifier,ev.target.checked);});
+  if($("#edMarker")){$("#edMarker").addEventListener("change",ev=>{const pp=P(p.identifier);if(pp){pp.marker=ev.target.checked;}pushHistory("mark");renderDetail();});}
+  $("#edDelete").addEventListener("click",()=>deleteTarget(p.identifier));
+  $("#edCopy").addEventListener("click",ev=>{ev.stopPropagation();copyTarget(p.identifier);});
+  $("#edNewBelow").addEventListener("click",()=>{
+    const cid=br?br.character_id:(S.branches.find(b=>b.isChat)||S.branches[0]).character_id;
+    const idx=br?br.order.findIndex(o=>String(o.identifier)===String(p.identifier))+1:0;
+    addToBranch(cid,idx,true);
+  });
+  $("#dClose").onclick=()=>{S.editId=null;renderDetail();};
+}
+
+function DEPTH_TIP(d){
+  const t=["depth=0:最新一条(最靠后)","depth=1:倒数第二条","depth=2","depth=3","depth=4","depth=5","depth=6:更早消息"];
+  return t[Math.max(0,Math.min(6,d))]+" —— 数字越大插得越靠前(早)";
+}
+function applyPositionLock(root,posRel){
+  const chips=root.querySelectorAll(".chip[data-depth]");
+  chips.forEach(c=>{c.style.opacity=posRel?".5":"1";c.style.pointerEvents=posRel?"none":"auto";c.style.cursor=posRel?"not-allowed":"pointer";});
+  const io=root.querySelector("#edInjOrder");
+  if(io){io.disabled=posRel;io.style.opacity=posRel?".6":"1";}
+  const depthChips=root.querySelector("#edDepthChips");
+  if(depthChips){depthChips.parentElement.parentElement.style.opacity=posRel?".55":"1";}
+}
+
+/* ---------------- 历史(撤销/重做) ---------------- */
+const HIST={stack:[],idx:-1},HMAX=60;
+function snapState(){return{prompts:S.prompts.map(p=>({...p})),branches:S.branches.map(b=>({character_id:b.character_id,isChat:b.isChat,order:b.order.map(o=>({...o}))})),mainCid:S.mainCid,selectedId:S.selectedId,editId:S.editId};}
+function resetHistory(){HIST.stack=[snapState()];HIST.idx=0;updateBtns();}
+function pushHistory(){HIST.stack=HIST.stack.slice(0,HIST.idx+1);HIST.stack.push(snapState());if(HIST.stack.length>HMAX)HIST.stack.shift();HIST.idx=HIST.stack.length-1;updateBtns();}
+function restoreSnap(s){S.prompts=s.prompts.map(p=>({...p}));S.branches=s.branches.map(b=>({...b,order:b.order.map(o=>({...o}))}));if(s.mainCid)S.mainCid=s.mainCid;S.selectedId=s.selectedId;S.editId=s.editId;}
+function undo(){if(HIST.idx<=0)return;HIST.idx--;restoreSnap(HIST.stack[HIST.idx]);renderList();renderDetail();updateDirty(true);updateBtns();}
+function redo(){if(HIST.idx>=HIST.stack.length-1)return;HIST.idx++;restoreSnap(HIST.stack[HIST.idx]);renderList();renderDetail();updateDirty(true);updateBtns();}
+function updateBtns(){$("#btnUndo").disabled=HIST.idx<=0;$("#btnRedo").disabled=HIST.idx>=HIST.stack.length-1;}
+
+/* ---------------- 导出 ---------------- */
+function buildExport(){
+  const out=JSON.parse(JSON.stringify(S.preset||{}));
+  const en={};S.branches.forEach(br=>br.order.forEach(o=>en[o.identifier]=o.enabled));
+  out.prompts=S.prompts.map(p=>(p.identifier in en)?{...p,enabled:en[p.identifier]}:{...p});
+  out.prompt_order=S.branches.map(b=>({
+    character_id:Number(b.character_id),
+    order:b.order.map(o=>{
+      // 锚点条目:写回原始 order 对象(不含我们附加的 raw 字段),确保内部占位不被改坏
+      if(o.raw)return JSON.parse(JSON.stringify(o.raw));
+      return {identifier:o.identifier,enabled:o.enabled};
+    }),
+  }));
+  return out;
+}
+function doExport(){
+  if(!S.preset){toast("无内容可导出");return;}
+  const out=buildExport();
+  const base=(S.fileName||"preset").replace(/\.json$/i,"");
+  const name=base+"_edited.json";
+  const blob=new Blob([JSON.stringify(out,null,2)],{type:"application/json"});
+  const a=document.createElement("a");a.href=URL.createObjectURL(blob);a.download=name;a.click();
+  setTimeout(()=>URL.revokeObjectURL(a.href),1000);
+  updateDirty(false);toast("✅ 导出 "+name);
+}
+function updateDirty(on){Dirty.on=!!on;$("#dirtyBar").classList.toggle("show",on);}
+/* 脏改动标记:用于刷新/关页拦截(beforeunload)与 dirtyBar 显示 */
+const Dirty={on:false};
+
+/* ---------------- 主题 (日/夜) ---------------- */
+function applyTheme(t){
+  document.documentElement.dataset.theme=t;   // light 不设也等同默认;dark 触发覆盖
+  $("#btnTheme").textContent=t==="dark"?"☀️":"🌙";
+  $("#btnTheme").title=t==="dark"?"切换到日间模式":"切换到夜间模式";
+}
+function toggleTheme(){
+  const cur=document.documentElement.dataset.theme==="dark"?"light":"dark";
+  try{localStorage.setItem("stPresetTheme",cur);}catch{}
+  applyTheme(cur);
+}
+(function initTheme(){
+  let t=null;try{t=localStorage.getItem("stPresetTheme");}catch{}
+  applyTheme(t==="dark"?"dark":"light");
+})();
+
+/* ---------------- 全局事件 ---------------- */
+$("#fileOpen").addEventListener("change",ev=>{const f=ev.target.files[0];if(f){openFile(f);ev.target.value="";}});
+$("#btnUndo").addEventListener("click",undo);
+$("#btnRedo").addEventListener("click",redo);
+$("#btnPaste").addEventListener("click",pasteFromClipboard);
+$("#btnAddTop").addEventListener("click",addToChat);
+$("#btnMulti").addEventListener("click",toggleMulti);
+$("#mbCopy").addEventListener("click",multiCopy);
+$("#mbDel").addEventListener("click",multiDelete);
+$("#mbDone").addEventListener("click",cleanupMulti);   // 完成:保留删除修改,退出多选
+$("#btnExport").addEventListener("click",doExport);
+$("#btnTheme").addEventListener("click",toggleTheme);
+$("#btnAbout").addEventListener("click",()=>{$("#aboutModal").style.display="flex";});
+$("#aboutClose").addEventListener("click",()=>{$("#aboutModal").style.display="none";});
+$("#aboutModal").addEventListener("click",ev=>{if(ev.target.id==="aboutModal")$("#aboutModal").style.display="none";});
+document.addEventListener("keydown",ev=>{
+  const t=document.activeElement&&document.activeElement.tagName;
+  const inI=(t==="INPUT"||t==="TEXTAREA"||t==="SELECT");
+  if((ev.ctrlKey||ev.metaKey)&&ev.key.toLowerCase()==="s"){ev.preventDefault();doExport();}
+  else if(ev.key==="Escape"){if(S.editId){S.editId=null;renderDetail();}else{S.selectedId=null;renderList();}}
+});
+/* 防手滑:有未保存改动时,刷新/关页/跳走前弹浏览器原生确认框 */
+window.addEventListener("beforeunload",ev=>{
+  if(!Dirty.on)return;               // 无改动不拦,避免烦人
+  ev.preventDefault();               // 触发浏览器原生"确定离开?"确认框
+  ev.returnValue="";                 // 兼容各浏览器(现代浏览器只要设置即弹框)
+});
+/* 内容编辑输入(在可编辑 detail 里按键)也算改动 */
+document.addEventListener("input",ev=>{
+  const t=ev.target;
+  if(S.preset&&(t.tagName==="TEXTAREA"||t.tagName==="INPUT"))updateDirty(true);
+});
+let ddepth=0;
+window.addEventListener("dragenter",ev=>{ev.preventDefault();ddepth++;});
+window.addEventListener("dragover",ev=>ev.preventDefault());
+window.addEventListener("dragleave",ev=>{ev.preventDefault();ddepth=Math.max(0,ddepth-1);});
+window.addEventListener("drop",ev=>{
+  ev.preventDefault();ddepth=0;
+  if(ev.dataTransfer&&ev.dataTransfer.files&&ev.dataTransfer.files.length){
+    const f=ev.dataTransfer.files[0];
+    if(/\.json$/i.test(f.name))openFile(f);
+    else toast("请拖入 .json 文件");
+  }
+});
+
+renderList();renderDetail();resetHistory();
+</script>
+</body>
+</html>
