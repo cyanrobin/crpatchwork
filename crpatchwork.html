@@ -48,7 +48,7 @@
   html[data-theme="dark"] .placeholder{color:#6b7590}
   html[data-theme="dark"] #dirtyBar{background:#332a08;color:#e0b45a;border-bottom-color:#4a3d12}
   html[data-theme="dark"] .fieldnote{background:#1a1e28;border-color:#2c3242;color:#aeb6c9}
-  html[data-theme="dark"] .inp,.inp:focus,html[data-theme="dark"] .txa,html[data-theme="dark"] .sel,
+  html[data-theme="dark"] .inp,html[data-theme="dark"] .txa,html[data-theme="dark"] .sel{background:#14171f;color:var(--ink);border-color:#2c3242}
   html[data-theme="dark"] .inp:focus,html[data-theme="dark"] .txa:focus{background:#14171f;color:var(--ink);border-color:#2c3242}
   html[data-theme="dark"] #detailHead{background:var(--panel)}
   html[data-theme="dark"] .listbanner{background:#1a1e28}
@@ -66,6 +66,7 @@
   html[data-theme="dark"] .toast{background:#f0f2f8;color:#1c2333}
   html[data-theme="dark"] .fieldnote code,html[data-theme="dark"] .depthdesc,html[data-theme="dark"] .fieldnote{color:#aeb6c9}
   html[data-theme="dark"] .listbanner .cnt{color:#6b7590}
+  html[data-theme="dark"] .drag-placeholder{background:var(--acc-soft);border-color:var(--acc)}
   html[data-theme="dark"] .copybtn,html[data-theme="dark"] .editbtn,html[data-theme="dark"] .delbtn{background:#232838;color:var(--muted);border-color:#2c3242}
   /* 锚点卡(紫条纹)暗色版 */
   html[data-theme="dark"] .card.anchor{background:repeating-linear-gradient(-45deg,#241f3a,#241f3a 8px,#2a2445 8px,#2a2445 16px);border-color:#3a3470}
@@ -118,10 +119,15 @@
   .btn input[type=file]{display:none}
   .pill{font-size:11.5px; padding:2px 8px; border-radius:99px; background:var(--acc-soft); color:var(--acc); max-width:200px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap}
   #dirtyBar{
-    display:none; background:#fef6e0; color:#8a5b00; padding:5px 18px; font-size:12.5px;
-    border-bottom:1px solid #f0e2b0; flex:0 0 auto;
+    display:none; background:#fef6e0; color:#8a5b00; padding:5px 12px 5px 18px; font-size:12.5px;
+    border-bottom:1px solid #f0e2b0; flex:0 0 auto; align-items:center; justify-content:space-between;
   }
-  #dirtyBar.show{display:block}
+  #dirtyBar.show{display:flex}
+  #dirtyBarClose{
+    background:transparent; border:none; color:#8a5b00; cursor:pointer; font-size:16px; line-height:1;
+    padding:2px 6px; border-radius:4px; margin-left:10px;
+  }
+  #dirtyBarClose:hover{background:rgba(138,91,0,.12)}
 
   /* ---------- 多选模式 ---------- */
   #multiBar{
@@ -133,6 +139,10 @@
   .mb-count b{font-size:14px}
   .mb-spacer{flex:1 1 auto}
   #multiBar .btn{padding:4px 10px; font-size:12px}
+  /* 全选控件 */
+  .mb-all{display:inline-flex; align-items:center; gap:4px; font-size:12.5px; color:var(--acc); font-weight:600; cursor:pointer}
+  .mb-all input{width:16px; height:16px; margin:0; cursor:pointer; accent-color:var(--acc)}
+  .mb-all.disabled{opacity:.4; pointer-events:none}
   /* 多选模式下卡片的复选框 */
   .mcheck{
     flex:0 0 auto; width:16px; height:16px; margin-right:2px; cursor:pointer;
@@ -147,7 +157,7 @@
   body.multi-on .card{cursor:pointer}
   body.multi-on .card .editbtn,
   body.multi-on .card .copybtn,
-  body.multi-on .card .delbtn{opacity:.35; pointer-events:none}
+  body.multi-on .card .delbtn:not(.delbtn-locked){opacity:.35; pointer-events:none}
   html[data-theme="dark"] #multiBar{background:#1a2340; border-bottom-color:#3b4a7a}
 
   /* ---------- body: two columns (both internal-scroll) ---------- */
@@ -179,10 +189,16 @@
     margin:4px 4px 8px; padding:9px 11px;
     background:var(--panel); border:1px solid var(--line); border-radius:10px;
     font-size:11.5px; color:var(--muted); display:flex; align-items:center; gap:8px; flex-wrap:wrap;
+    cursor:pointer; user-select:none; transition:.12s;
   }
+  .listbanner:hover{border-color:var(--acc); background:var(--acc-soft)}
   .listbanner .badge{font-size:10.5px; padding:1px 7px; border-radius:6px; font-weight:600}
   .listbanner .badge.cur{background:var(--ok-soft); color:var(--ok)}
-  .listbanner .cnt{margin-left:auto; color:var(--faint)}
+  .listbanner .cnt{margin-left:auto; color:var(--faint); font-size:11.5px}
+  .listbanner .banner-arrow{color:var(--muted); font-size:13px; margin:0 6px 0 2px; transition:.12s; font-weight:bold}
+  .listbanner:hover .banner-arrow{color:var(--acc); transform:translateX(2px)}
+  .fg-grid{display:flex; flex-wrap:wrap; gap:14px}
+  .fg-grid .fg{flex:1 1 200px; min-width:160px}
   .gapdiv{height:10px}
   /* 分支分隔器（非折叠），每个分支开头一道横线+小标签 */
   .sep{height:1px; background:var(--line); margin:14px 8px 8px; position:relative}
@@ -233,15 +249,28 @@
     display:flex; align-items:center; justify-content:center; transition:.12s;
   }
   .delbtn:hover{background:var(--dang); border-color:var(--dang); color:#fff}
+  /* 系统核心提示词的垃圾桶:占位但禁用(灰色,不可点,点了有 toast) */
+  .delbtn-locked{
+    background:#eef1f6 !important; color:#b8c0d0 !important; border-color:#e2e6ee !important;
+    cursor:not-allowed; opacity:1; pointer-events:auto;   /* 留着点击给 toast 用 */
+  }
+  .delbtn-locked:hover{background:#eef1f6 !important; color:#b8c0d0 !important; border-color:#e2e6ee !important}
+  html[data-theme="dark"] .delbtn-locked{
+    background:#232838 !important; color:#5c6478 !important; border-color:#2c3242 !important;
+  }
+  html[data-theme="dark"] .delbtn-locked:hover{background:#232838 !important; color:#5c6478 !important; border-color:#2c3242 !important}
   .copybtn{
     flex:0 0 auto; border:1px solid var(--line); background:#fff; color:var(--muted);
     width:24px; height:24px; border-radius:6px; cursor:pointer; font-size:12px; line-height:1;
     display:flex; align-items:center; justify-content:center; transition:.12s;
   }
   .copybtn:hover{background:var(--sys); border-color:var(--sys); color:#fff}
-  .drag-over-top{box-shadow:0 -2px 0 0 var(--acc) inset}
-  .drag-over-bot{box-shadow:0 2px 0 0 var(--acc) inset}
-  .dragging{opacity:.35}
+  .dragging{opacity:.4; cursor:grabbing}
+  .drag-placeholder{height:42px; margin:3px 0; border-radius:8px; border:2px dashed var(--acc); background:var(--acc-soft); transition:height .12s ease}
+  .drag-over-top{box-shadow:0 -3px 0 0 var(--acc) inset; position:relative}
+  .drag-over-bot{box-shadow:0 3px 0 0 var(--acc) inset; position:relative}
+  .card:not(.dragging):hover .grip{cursor:grab}
+  .card .grip{cursor:grab}
   .card.posrel .ordpill{opacity:.55; text-decoration:line-through}
   /* 锚点卡:锁定视觉 */
   .card.anchor{background:repeating-linear-gradient(-45deg,#fbfaff,#fbfaff 8px,#f6f4ff 8px,#f6f4ff 16px); border:1px dashed #cfc6ef; cursor:grab}
@@ -344,7 +373,7 @@
   <input type="file" id="fileOpen" accept=".json,application/json" data-page-node-id="E1EpMKanzrAHrQb3R8nNYF">
   <button class="btn" id="btnUndo" disabled title="Ctrl+Z" data-page-node-id="WwqUFARlTUKkNSaCxFhffE">↩ 撤销</button>
   <button class="btn" id="btnRedo" disabled title="Ctrl+Y" data-page-node-id="Hd6xPdq2OwUno6xiBltiX6">↪ 重做</button>
-  <button class="btn" id="btnMulti" title="进入多选模式：可勾选多条，批量复制 / 删除。再次点击退出多选">☑ 多选</button>
+  <button class="btn" id="btnMulti" title="进入多选模式">☑ 多选</button>
   <button class="btn" id="btnAddTop" title="新增到当前卡牌分支末尾" data-page-node-id="rqh530tsYcnCemCkFHy3HZ">＋ 新增</button>
   <button class="btn" id="btnPaste" title="粘贴剪贴板里的已复制条目到当前分支末尾" data-page-node-id="rqh530tsYcnCemCkFHy3HZ">📋 粘贴</button>
   <button class="btn" id="btnExport" data-page-node-id="dRFfkdGnTHxDj1Mp7kCoYP">⬇ 导出 JSON</button>
@@ -352,15 +381,21 @@
   <button class="btn" id="btnAbout" title="关于 / 免责声明" data-page-node-id="dRFfkdGnTHxDj1Mp7kCoYP">ⓘ</button>
 </header>
 
-<div id="dirtyBar" data-page-node-id="KD5kHqi5g2iNuF4MtcdfEc">⚠ 有未保存改动 —— 及时「导出 JSON」落盘（纯本地工具，刷新即丢）</div>
+<div id="dirtyBar" data-page-node-id="KD5kHqi5g2iNuF4MtcdfEc">
+  <span>⚠ 有未保存改动 —— 及时「导出 JSON」落盘（纯本地工具，刷新即丢）</span>
+  <button id="dirtyBarClose" title="关闭本次提醒">✕</button>
+</div>
 
-<!-- 多选模式操作栏：仅进入多选时显示。左侧计数,右侧操作按钮集合区 -->
+<!-- 多选模式操作栏：仅进入多选时显示。左侧全选/计数,右侧操作按钮集合区 -->
 <div id="multiBar">
+  <label class="mb-all" title="全选 / 全不选当前可见条目"><input type="checkbox" id="mbAllCheck"><span>全选</span></label>
   <span class="mb-count">已选 <b id="multiCount">0</b> 条</span>
   <div class="mb-spacer"></div>
-  <button class="btn" id="mbCopy" title="复制所有勾选条目（可切到别的页面粘贴）">⧉ 复制所选</button>
-  <button class="btn danger" id="mbDel" title="删除所有勾选条目（退出时若不想保留可再撤回）">🗑 删除所选</button>
-  <button class="btn primary" id="mbDone" title="确认本次改动,退出多选">✅ 完成</button>
+  <button class="btn" id="mbCopy" title="复制所选">⧉ 复制所选</button>
+  <button class="btn" id="mbEnable" title="启用所选(开启启停开关)">✓ 启用所选</button>
+  <button class="btn" id="mbDisable" title="停用所选(关闭启停开关)">✕ 停用所选</button>
+  <button class="btn danger" id="mbDel" title="删除所选">🗑 删除所选</button>
+  <button class="btn primary" id="mbDone" title="保留本次改动,退出多选">✅ 完成</button>
 </div>
 
 <div class="workspace" data-page-node-id="0Djt27AwfhWn6BGDBVtXg4">
@@ -373,11 +408,16 @@
     </div>
     <div id="detailWrap" style="display:none" data-page-node-id="m83xqBxnIL4EGF3D99ve3O">
       <div id="detailHead" data-page-node-id="Cm0Jd4PV3OIEsyeNuwHRIv">
-        <h2 id="dHeadTitle" data-page-node-id="GqHCeaXLXnZyGZjYm77XJz">条目详情</h2>
+        <h2 id="dHeadTitle" data-page-node-id="GqHCeaXLXnZyGZjYm77XJz" title="双击改名">条目详情</h2>
         <span class="badge" id="dHeadBranch" style="margin-left:4px" data-page-node-id="YcWRJormbFkexsv4NZUksb"></span>
         <div class="spacer" data-page-node-id="hPSmZ1rpQqtlM8DAfuh5gb"></div>
         <span style="font-size:11px;color:var(--faint)" id="dHeadId" data-page-node-id="AvQFPMuihwT76sooZSOkUc"></span>
-        <button class="btn" id="dClose" title="关闭(Esc)" data-page-node-id="lhjNxDAmNEIJsRD5XCKb7N">✕</button>
+        <!-- 条目编辑用 -->
+        <button class="btn primary" id="dSave" title="保存本次编辑(否则关窗/切卡会被当作放弃)">保存</button>
+        <button class="btn" id="dClose" title="关闭(Esc) — 若有改动会询问是否放弃">✕</button>
+        <!-- 设置面板用(默认隐藏) -->
+        <button class="btn primary" id="settingsSave" style="display:none" title="保存设置">保存</button>
+        <button class="btn" id="settingsClose" style="display:none" title="关闭(Esc)">✕</button>
       </div>
       <div id="detailBody" data-page-node-id="MxHLrzU7w0Txudi68jZ6Cs"></div>
     </div>
@@ -424,11 +464,17 @@ let S={
   preset:null, branches:[], prompts:[], fileName:"",
   mainCid:null,          // 当前"编辑对象"分支:左列只渲染它(角色卡上下文)。其它分支是酒馆系统/后台层,仅保留不渲染
   selectedId:null, editId:null,
-  lockedSet:new Set(),   // 锁定条目 identifier: 见 isLockedId 注释
+  lockedSet:new Set(),   // 锁定条目 identifier(不可编辑不可删): 见 isLockedId 注释
+  protectedSet:new Set(),// 受保护核心 system 条目(可编辑但不可删): system_prompt:true 带 role/content
   multiOn:false,         // 是否处于多选模式
   picked:new Set(),      // 多选模式下勾选的 identifier 集合
-  multiDeleted:false,    // 本次多选是否做过删除(供退出时询问撤回)
-  multiDeletedN:0,       // 本次多选删除的条数
+  editSnapshot:null,     // 进入编辑时的 prompt 深拷贝(用于 X 时还原)
+  editDirty:false,       // 当前编辑会话是否有未保存改动
+  editDraft:null,        // 当前编辑草稿(输入改了字段但不直接落盘;save 才写回 prompt)
+  settingsOpen:false,     // 设置面板(预设元数据)是否打开
+  presetDraft:null,      // 预设元数据草稿(改字段不入 S.preset,save 才写回)
+  presetSnapshot:null,   // 打开设置面板时的元数据快照(放弃时还原)
+  presetDirty:false,     // 设置面板是否有未保存改动
 };
 const P=id=>S.prompts.find(p=>String(p.identifier)===String(id));
 const isChatB=cid=>Number(cid)===CHAT_CID;
@@ -452,6 +498,15 @@ function isStReserved(p){
   if(!p)return false;
   const empty=!p.content||String(p.content).trim()==="";
   return !!p.marker && !p.role && empty;
+}
+/* 系统核心提示词(可编辑、但不可删除):预设作者用 system_prompt:true 明确标注、且带 role 和 content。
+   典型 main / nsfw / jailbreak / enhanceDefinitions —— 整份预设注入模型时的骨架,删了角色逻辑崩。
+   用户通过本工具新建的条目不会带 system_prompt 标记,故不受保护、可自由删。 */
+function isProtectedSys(p){
+  return !!p && p.system_prompt===true && !!p.role && !!(p.content&&String(p.content).trim()!=="");
+}
+function isProtectedSysId(id){
+  const p=P(id);return p?isProtectedSys(p):false;
 }
 /* 锁定判定:纯 order 锚点(order有但prompts无) 或 ST 保留槽位(marker+无role+空内容) */
 function isLockedId(id){
@@ -480,6 +535,7 @@ function importJson(text,fileName){
   S.prompts=d.prompts.map(p=>({...p}));
   S.fileName=fileName||"preset.json";
   S.selectedId=null; S.editId=null;
+  S.editSnapshot=null; S.editDirty=false; S.editDraft=null;   // 新预设:清掉上一次的编辑会话状态
   let poArr=d.prompt_order;
   if(!poArr.length)poArr=[{character_id:CHAT_CID,order:[]}];
   S.branches=poArr.map(b=>({
@@ -498,6 +554,9 @@ function importJson(text,fileName){
     if(!P(o.identifier)) S.lockedSet.add(String(o.identifier));
   }));
   S.prompts.forEach(p=>{ if(isStReserved(p)) S.lockedSet.add(String(p.identifier)); });
+  // 受保护核心 system 条目(可编辑不可删):出现在主分支且带 system_prompt 标记
+  S.protectedSet=new Set();
+  S.prompts.forEach(p=>{ if(isProtectedSys(p)) S.protectedSet.add(String(p.identifier)); });
   S.mainCid=pickMainCid();   // 决定左列渲染哪个分支(角色卡上下文优先)
   $("#fileTag").textContent=fileName||"已导入";
   $("#fileTag").style.background="var(--ok-soft)";$("#fileTag").style.color="var(--ok)";
@@ -527,13 +586,15 @@ function addToChat(){const br=mainBr()||S.branches.find(b=>b.isChat)||S.branches
 function deleteTarget(id){
   if(!id)return;
   if(isLockedId(id)){toast("🔒 该条为酒馆内部条目,不可删除");return;}
+  if(isProtectedSysId(id)){toast("🔒 这是预设的系统核心提示词,可编辑但不可删除");return;}
   const p=P(id);const label=guessName(p);
   if(!confirm('删除条目「'+label+'」?会同时从 prompts 与 order 移除。'))return;
+  // 如果删的就是当前正在编辑的条目,先强制关闭编辑(focus reset)
+  if(S.editId===id)closeEdit(true);
   S.prompts=S.prompts.filter(x=>String(x.identifier)!==String(id));
   S.branches.forEach(br=>{br.order=br.order.filter(o=>String(o.identifier)!==String(id));});
   S.lockedSet.delete(String(id));
   if(S.selectedId===id)S.selectedId=null;
-  if(S.editId===id)S.editId=null;
   pushHistory("del");renderList();renderDetail();updateDirty(true);toast("已删除");
 }
 
@@ -612,7 +673,7 @@ function copyTargets(ids){
   const list=[];
   ids.forEach(id=>{
     const p=P(id);
-    if(!p||isLockedId(id))return;          // 锁定条跳过(理論上已禁勾选)
+    if(!p||isLockedId(id)||isProtectedSysId(id))return;   // 锁定/系统核心 跳过
     let enabled=true;const br=branchOf(id);
     if(br){const oo=br.order.find(o=>String(o.identifier)===String(id));if(oo)enabled=oo.enabled!==false;}
     list.push({p,enabled});
@@ -700,9 +761,11 @@ async function pasteFromClipboard(){
 
 /* ---------------- 多选模式 ----------------
    交互设计(蕾卡定稿):
-   - 顶部「☑ 多选」:进入多选;进入后再点 = 以"取消"方式退出
-     (若本次多选删过条目,弹窗询问是否撤回——后悔药)。
+   - 顶部「☑ 多选」:进入多选;进入后按钮变为「☑ 取消多选」。
+   - 再点「取消多选」= 取消行为:若本次删过条目,弹窗问"是否放弃本次操作"。
+     语义:确定 = 撤回删除并退出;取消 = 当没发生过,模式与勾选都保留。
    - multiBar「✅ 完成」:保留删除修改,退出多选。
+   - multiBar「全选」:一键勾/反当前分支所有非锁定条目。
    - 批量删除只入一次历史栈,撤回时一次 undo 全回来。
    ============================================================ */
 function pickedArr(){return Array.from(S.picked||[]);}
@@ -710,32 +773,72 @@ function refreshMultiBar(){
   const n=pickedArr().length;
   const cnt=$("#multiCount");if(cnt)cnt.textContent=String(n);
   const dis=n===0;
-  ["#mbCopy","#mbDel"].forEach(s=>{const el=$(s);if(el)el.disabled=dis;});
+  ["#mbCopy","#mbDel","#mbEnable","#mbDisable"].forEach(s=>{const el=$(s);if(el)el.disabled=dis;});
+  // 同步全选 checkbox:全勾 = checked, 部分勾 = indeterminate, 全无 = unchecked
+  const all=$$("#mbAllCheck");
+  const ids=visiblePickableIds();
+  const allPicked=ids.length>0&&ids.every(id=>S.picked&&S.picked.has(String(id)));
+  const anyPicked=ids.some(id=>S.picked&&S.picked.has(String(id)));
+  all.forEach(el=>{
+    el.checked=allPicked;
+    el.indeterminate=!allPicked&&anyPicked;
+    el.disabled=ids.length===0;
+  });
 }
 function enterMulti(){
   if(!S.preset){toast("先导入一个预设");return;}
   S.multiOn=true;S.picked=S.picked||new Set();
-  S.multiDeleted=false;S.multiDeletedN=0;    // 本次多选是否删过/删了几条(供退出时询问撤回)
   document.body.classList.add("multi-on");
   $("#multiBar").classList.add("show");
-  const b=$("#btnMulti");if(b){b.textContent="☑ 多选进行中";b.classList.add("primary");}
+  const b=$("#btnMulti");if(b){b.textContent="☑ 取消多选";b.classList.add("primary");}
+  _anchorIdx=HIST.idx;                 // 记录"进入多选前"历史 idx(不入快照,避免 undo 干扰)
+  pushHistory("multi-enter");          // 以进入多选为新快照:多选内改动撤销到此处=回到进多选前
   refreshMultiBar();renderList();
 }
-function cleanupMulti(){
-  S.multiOn=false;S.picked=new Set();S.multiDeleted=false;S.multiDeletedN=0;
+/* 纯清理多选 UI(不碰数据/历史)——供"完成"与"取消回退到锚点后"调用 */
+function cleanupMultiUI(){
+  S.multiOn=false;S.picked=new Set();_anchorIdx=null;
   document.body.classList.remove("multi-on");
   $("#multiBar").classList.remove("show");
   const b=$("#btnMulti");if(b){b.textContent="☑ 多选";b.classList.remove("primary");}
+  $$("#mbAllCheck").forEach(el=>{el.checked=false;el.indeterminate=false;});
   renderList();renderDetail();
 }
+/* 多选会话锚点:进入多选前的历史 idx。用模块级变量(非快照字段),undo 不会错乱它 */
+let _anchorIdx=null;
+/* 多选会话内是否有"未撤销回锚点的改动":
+   比较当前数据快照与进入多选前快照是否一致(而非比较 idx,因为 undo 可停在栈中段,
+   此时 idx>anchor 但数据可能已撤销到与锚点一致——那就不算有改动)。 */
+function multiHasChanged(){
+  if(_anchorIdx==null||_anchorIdx<0||_anchorIdx>=HIST.stack.length)return false;
+  const base=HIST.stack[_anchorIdx];      // 进入多选前快照
+  const cur=snapState();
+  // 忽略 UI 态(multiOn/picked),只比数据(prompts/branches/mainCid)
+  return JSON.stringify([base.prompts,base.branches,base.mainCid])!==JSON.stringify([cur.prompts,cur.branches,cur.mainCid]);
+}
+/* 取消多选:整体回退到进入多选前的锚点快照(等价批量撤销) + 退出。无改动则直接退。 */
+function cancelMulti(){
+  if(!S.multiOn)return;
+  if(multiHasChanged()){
+    if(!confirm("放弃本次多选里做的所有改动(删除/启停)并退出多选？"))return;
+    // 回退到锚点(进入多选前快照):undo 直到数据回到锚点
+    while(HIST.idx>_anchorIdx&&multiHasChanged()){HIST.idx--;restoreSnap(HIST.stack[HIST.idx]);}
+    // 若 undo 到头仍与锚点有差(极端),强制套用锚点快照
+    if(multiHasChanged()&&_anchorIdx>=0&&_anchorIdx<HIST.stack.length)restoreSnap(HIST.stack[_anchorIdx]);
+    updateBtns();updateDirty(true);renderList();renderDetail();
+    toast("已放弃本次多选改动");
+  }
+  cleanupMultiUI();
+}
+/* 完成多选:保留本次改动,退出多选 UI */
+function finishMulti(){
+  if(!S.multiOn)return;
+  cleanupMultiUI();
+}
+/* 顶部「☑ 多选 / 取消多选」切换入口 */
 function toggleMulti(){
   if(!S.multiOn){enterMulti();return;}
-  // 再点「多选进行中」= 以"取消"方式退出:若本次删过,询问是否撤回(后悔药)
-  if(S.multiDeleted){
-    const yes=confirm("本次多选中删除了 "+(S.multiDeletedN||"")+" 条,是否撤回这些删除?\n\n[确定] = 撤回删除并退出多选\n[取消] = 保留删除并退出多选");
-    if(yes){undo();toast("已撤回本次多选里的删除");}
-  }
-  cleanupMulti();
+  cancelMulti();
 }
 function togglePick(id){
   if(!S.picked)S.picked=new Set();
@@ -743,29 +846,161 @@ function togglePick(id){
   if(S.picked.has(k))S.picked.delete(k);else S.picked.add(k);
   refreshMultiBar();renderList();
 }
+/* 当前多选可见区所有"可多选处理"条目 id(仅排锁定/锚点;受保护系统核心可勾选——删/复制时会拦) */
+function visiblePickableIds(){
+  const br=mainBr();if(!br)return [];
+  return br.order.map(o=>String(o.identifier)).filter(id=>!isLockedId(id));
+}
+function toggleSelectAll(ev){
+  const ids=visiblePickableIds();if(!ids.length){toast("当前分支没有可选项");return;}
+  // 跟随事件源的勾选状态(checkbox.checked):勾上 → 全选;不勾 → 全反选
+  const wantAll=ev&&ev.target?!!ev.target.checked:true;
+  S.picked=new Set();
+  if(wantAll)ids.forEach(id=>S.picked.add(String(id)));
+  refreshMultiBar();renderList();
+}
 function multiCopy(){
   const ids=pickedArr();
   if(!ids.length){toast("先勾选要复制的条目");return;}
+  if(ids.some(isProtectedSysId)){toast("🛡 系统核心提示词不可复制,请取消勾选后再试");return;}
   copyTargets(ids);
 }
 function multiDelete(){
-  const ids=pickedArr().filter(id=>!isLockedId(id));
+  const pickedAll=pickedArr();
+  // 系统核心条目不可删:若勾选里混有它们,提醒用户而不是静默跳过
+  const prot=pickedAll.filter(id=>isProtectedSysId(id));
+  if(prot.length){toast("🛡 勾选中含 "+prot.length+" 条系统核心提示词,不可删除,请先取消勾选");return;}
+  const ids=pickedAll.filter(id=>!isLockedId(id));
   if(!ids.length){toast("没有可删除的条目(酒馆内部槽位不可删)");return;}
   const n=ids.length;
-  if(!confirm("删除选中的 "+n+" 条?会同时从 prompts 与 order 移除。\n\n(退出多选时仍会再询问是否撤回)"))return;
+  if(!confirm("删除选中的 "+n+" 条？"))return;
   const kill=new Set(ids.map(String));
+  // 若当前编辑项包含在删除集中,强制关闭编辑
+  if(S.editId&&kill.has(String(S.editId)))closeEdit(true);
   S.prompts=S.prompts.filter(x=>!kill.has(String(x.identifier)));
   S.branches.forEach(br=>{br.order=br.order.filter(o=>!kill.has(String(o.identifier)));});
   ids.forEach(id=>{
     S.lockedSet&&S.lockedSet.delete(String(id));
     if(S.selectedId===id)S.selectedId=null;
-    if(S.editId===id)S.editId=null;
   });
-  pushHistory("del-multi");                 // 关键:整批只入一次历史栈
-  S.multiDeleted=true;S.multiDeletedN=n;    // 记录:退出时询问撤回
+  pushHistory("del-multi");                 // 整批只入一次历史栈(以进入多选为锚点可整体回退)
   S.picked=new Set();
   refreshMultiBar();renderList();renderDetail();updateDirty(true);
-  toast("已删除 "+n+" 条(退出多选时可选择撤回)");
+  toast("已删除 "+n+" 条(可 Ctrl+Z / 取消多选回退)");
+}
+/* 批量启停所选(勾选的可编辑条目设为同一启用态)。直接改 order.enabled + prompt.enabled,
+   单次入历史栈,撤销一次全回来。 */
+function multiSetEnabled(on){
+  const ids=pickedArr().filter(id=>!isLockedId(id));   // 受保护核心仍可启停(可编辑),故只排锁定
+  if(!ids.length){toast("没有可设置的条目");return;}
+  ids.forEach(id=>{
+    const br=branchOf(id);
+    if(br){const o=br.order.find(o=>String(o.identifier)===String(id));if(o)o.enabled=!!on;}
+    const p=P(id);if(p)p.enabled=!!on;
+  });
+  pushHistory("enab-multi");                // 整批一次撤销
+  refreshMultiBar();renderList();renderDetail();updateDirty(true);
+  toast((on?"启用":"停用")+"了 "+ids.length+" 条");
+}
+
+/* ---------------- 预设元数据设置面板 ----------------
+   编辑 prompts 数组外的字段(采样参数等),与条目编辑一致:草稿层 + save 才写回 S.preset + pushHistory */
+const SETTINGS_FIELDS=[
+  // [key, type, label, min, max, step(数值步进;区间幅度<5 的取 0.01,大区间默认 1)]
+  ["temperature",        "num", "温度 temperature",         0,   2,    0.01],
+  ["frequency_penalty",  "num", "频率惩罚 frequency_penalty", 0,  2,    0.01],
+  ["presence_penalty",   "num", "存在惩罚 presence_penalty",   -2, 2,    0.01],
+  ["repetition_penalty", "num", "重复惩罚 repetition_penalty", 1,  2,    0.01],
+  ["top_p",              "num", "Top P",                    0,   1,    0.01],
+  ["top_k",              "num", "Top K",                    0,   500,  1   ],
+];
+const SETTINGS_DEFAULTS={temperature:1,frequency_penalty:0,presence_penalty:0,repetition_penalty:1,top_p:1,top_k:0,top_a:0,min_p:0,openai_max_context:8000,openai_max_tokens:512,wrap_in_quotes:false,names_behavior:0};
+
+function openSettings(){
+  if(!S.preset){toast("先导入一个预设");return;}
+  // 抓 S.preset 元数据的快照(draft/快照机制)
+  S.presetSnapshot=JSON.parse(JSON.stringify(S.preset));
+  S.presetDraft=JSON.parse(JSON.stringify(S.preset));
+  S.settingsOpen=true;S.presetDirty=false;
+  renderList();renderDetail();
+}
+function closeSettings(force){
+  if(!S.settingsOpen)return true;
+  if(!force&&hasSettingsChanges()){
+    if(!confirm("放弃本次设置改动?所有改动将还原。"))return false;
+    // 还原:把快照里非 prompts/prompt_order 的字段写回 S.preset
+    if(S.presetSnapshot){
+      for(const k of Object.keys(S.preset)){
+        if(k==="prompts"||k==="prompt_order")continue;
+        S.preset[k]=S.presetSnapshot[k];
+      }
+    }
+    toast("已放弃本次设置");
+  }
+  S.settingsOpen=false;S.presetDraft=null;S.presetSnapshot=null;S.presetDirty=false;
+  renderList();renderDetail();updateDirty(true);
+  return true;
+}
+function commitSettings(){
+  if(!S.settingsOpen||!S.presetDraft)return;
+  if(!hasSettingsChanges()){toast("没有改动,无需保存");return;}
+  pushHistory("settings");
+  // 把 draft 里元数据字段写回 S.preset(prompts/prompt_order 不动,已经各自管理)
+  for(const[k,,,min,max] of SETTINGS_FIELDS){
+    if(S.presetDraft[k]!==undefined)S.preset[k]=S.presetDraft[k];
+  }
+  S.presetSnapshot=JSON.parse(JSON.stringify(S.preset));
+  S.presetDraft=JSON.parse(JSON.stringify(S.preset));
+  S.presetDirty=false;
+  renderDetail();                        // 刷新设置面板(按钮 disabled 等)
+  updateDirty(true);
+  toast("已保存预设设置");
+}
+function hasSettingsChanges(){
+  if(!S.presetDirty||!S.presetSnapshot||!S.presetDraft)return false;
+  for(const[k,,,min,max] of SETTINGS_FIELDS){
+    if(JSON.stringify(S.presetSnapshot[k])!==JSON.stringify(S.presetDraft[k]))return true;
+  }
+  return false;
+}
+function toggleSettings(){
+  if(!S.preset){toast("先导入一个预设");return;}
+  if(S.settingsOpen)closeSettings();else openSettings();
+}
+/* 设置面板标题双击 → 切到 input 编辑文件名(回车保存 / 失焦保存 / Esc 取消) */
+function enterTitleEdit(){
+  const dh=$("#dHeadTitle");if(!dh)return;
+  // 已在编辑态(已有 input)就不再进入
+  if(dh.querySelector("input"))return;
+  const cur=(S.fileName||"未命名预设").replace(/\.json$/i,"");
+  const inp=document.createElement("input");
+  inp.type="text";inp.value=cur;
+  inp.style.cssText="font-size:14px;padding:4px 8px;border:1px solid var(--acc);border-radius:6px;background:#fff;color:var(--ink);width:200px";
+  dh.innerHTML="";dh.appendChild(inp);
+  let saved=false;
+  function commitTitle(){
+    if(saved)return;saved=true;
+    const v=inp.value.trim()||cur;
+    if(v!==cur){
+      S.fileName=v+".json";
+      if(S.preset)S.preset.name=v;
+      const ft=$("#fileTag");if(ft)ft.textContent=S.fileName;
+      renderList();
+      toast("已重命名为「"+v+"」");
+    }
+    renderDetail();
+  }
+  function cancelTitle(){
+    if(saved)return;saved=true;
+    renderDetail();
+  }
+  inp.addEventListener("blur",commitTitle);
+  inp.addEventListener("keydown",e=>{
+    if(e.key==="Enter"){e.preventDefault();inp.blur();}
+    else if(e.key==="Escape"){e.preventDefault();cancelTitle();}
+  });
+  // focus 延后到下一个微任务,避免在 dblclick 同步链里被同步 blur 干扰(防 renderDetail 重写 dHeadTitle)
+  Promise.resolve().then(()=>{if(!saved){try{inp.focus();inp.select();}catch{}}});
 }
 
 /* ---------------- 字段编辑 ---------------- */
@@ -776,27 +1011,45 @@ function setEnabled(id,on){
   const p=P(id);if(p)p.enabled=!!on;
   pushHistory("enab");renderList();renderDetail();
 }
-function setRole(id,r){const p=P(id);if(!p)return;p.role=r;touchReflect();}
+/* 编辑字段函数:只改草稿(S.editDraft),不直接写 prompt;save 才落盘 */
+function ed(){return S.editDraft;}
+function setRole(id,r){const p=ed();if(!p)return;p.role=r;markDraftDirty();touchReflect();}
 function setDepth(id,v){
-  const p=P(id);if(!p)return;
+  const p=ed();if(!p)return;
   if(parseInt(p.injection_position,10)!==1)return;   // 相对模式锁定
-  let n=parseInt(v,10);if(isNaN(n))n=4;p.injection_depth=Math.max(0,Math.min(6,n));touchReflect();
+  let n=parseInt(v,10);if(isNaN(n))n=4;p.injection_depth=Math.max(0,Math.min(6,n));markDraftDirty();touchReflect();
 }
 function setInjOrder(id,v){
-  const p=P(id);if(!p)return;
+  const p=ed();if(!p)return;
   if(parseInt(p.injection_position,10)!==1)return;
-  let n=parseInt(v,10);if(isNaN(n))n=100;p.injection_order=n;touchReflect();
+  let n=parseInt(v,10);if(isNaN(n))n=100;p.injection_order=n;markDraftDirty();touchReflect();
 }
 function setPosition(id,v){
-  const p=P(id);if(!p)return;
+  const p=ed();if(!p)return;
   let n=parseInt(v,10);if(isNaN(n))n=0;p.injection_position=n===1?1:0;
   // 切到相对时,depth/order 留酒馆自动算的值不动;切到聊天中保留可改
-  touchReflect();
+  markDraftDirty();touchReflect();
 }
-function setName(id,v){const p=P(id);if(!p)return;p.name=v;touchReflect();}
-function setContent(id,v){const p=P(id);if(!p)return;p.content=v;touchReflect();}
+function setName(id,v){const p=ed();if(!p)return;p.name=v;markDraftDirty();touchReflect();}
+function setContent(id,v){const p=ed();if(!p)return;p.content=v;markDraftDirty();touchReflect();}
+function markDraftDirty(){if(!S.editDirty)S.editDirty=true;}
 let touchT;
-function touchReflect(){clearTimeout(touchT);touchT=setTimeout(()=>{renderList();renderDetail();updateDirty(true);},80);}
+function touchReflect(){
+  clearTimeout(touchT);
+  // 80ms 内无输入就刷新列表与详情;但如果焦点在文本输入框内,等失焦再渲(避免拆掉输入框丢焦点)
+  touchT=setTimeout(()=>{
+    if(S.editId){
+      const ae=document.activeElement;
+      const inEditableText=ae&&(ae.id==="edName"||ae.id==="edContent");
+      if(inEditableText){
+        const re=()=>{ae.removeEventListener("blur",re);renderList();renderDetail();updateDirty(true);};
+        ae.addEventListener("blur",re,{once:true});
+        return;
+      }
+    }
+    renderList();renderDetail();updateDirty(true);
+  },80);
+}
 
 /* ---------------- 分支内移动 ---------------- */
 function moveInBranch(id,dir){
@@ -816,53 +1069,116 @@ function setOrderNum(id,val){
 }
 
 /* ---------------- 拖拽换序(同分支内) ---------------- */
-let dragSrc=null,dragOverEl=null,dragHalf=null;
+let dragSrc=null,dragOverEl=null,dragHalf=null,dragPh=null,lastSwitchY=null;
+let autoRAF=null,autoY=null,autoScrollCl=null;
+const DRAG_SWITCH_DIST=12; // 鼠标需移动多少像素才允许占位槽切换一次(防布局变化导致连锁跳)
+const AUTOSCROLL_EDGE=72, AUTOSCROLL_MAX=14; // 拖到列表顶/底边缘多少px内开始自动滚动;最大速度px/帧
 function onDragStart(e){
   const card=e.target.closest(".card");if(!card)return;
   dragSrc={cid:card.dataset.cid,pid:card.dataset.pid};
+  lastSwitchY=e.clientY;
   card.classList.add("dragging");
+  // 占位空隙:在源卡处插入一条虚线槽,拖动时随目标位置移动,把其他卡片"挤开"
+  dragPh=document.createElement("div");dragPh.className="drag-placeholder";
+  dragPh.style.height=card.offsetHeight+"px";
+  card.parentNode.insertBefore(dragPh,card.nextSibling);
+  startAutoScroll(card.parentNode.closest("#leftCol")||card.parentNode);
   e.dataTransfer.effectAllowed="move";e.dataTransfer.setData("text/plain",card.dataset.pid);
 }
-function onDragOver(e){
-  const card=e.target.closest(".card");if(!card||!dragSrc)return;
-  if(card.dataset.cid!==dragSrc.cid)return;
-  e.preventDefault();e.dataTransfer.dropEffect="move";
-  const rect=card.getBoundingClientRect();
-  const half=(e.clientY-rect.top)<rect.height/2;
-  card.classList.toggle("drag-over-top",half);
-  card.classList.toggle("drag-over-bot",!half);
-  dragOverEl=card;dragHalf=half;
+function placePh(card,half){if(half)card.parentNode.insertBefore(dragPh,card);else card.parentNode.insertBefore(dragPh,card.nextSibling);}
+
+/* 根据当前布局与鼠标 Y,计算应把占位槽插在哪张卡之前/之后。
+   以鼠标指针坐标为唯一基准,不依赖上一次目标卡(避免布局变化后 rect 漂移)。 */
+function resolveDropPosition(cl,clientY){
+  const cards=[...cl.querySelectorAll(".card:not(.dragging)")];
+  if(!cards.length)return null;
+  let target=cards[cards.length-1];
+  for(let i=0;i<cards.length;i++){
+    const r=cards[i].getBoundingClientRect();
+    if(clientY<=r.bottom){target=cards[i];break;}
+  }
+  const tr=target.getBoundingClientRect();
+  const half=(clientY-tr.top)<tr.height/2;
+  return {target,half};
 }
-function onDragLeave(e){const c=e.target.closest(".card");if(c)c.classList.remove("drag-over-top","drag-over-bot");}
-function cleanDrag(){dragSrc=null;dragOverEl=null;$$(".card").forEach(c=>c.classList.remove("dragging","drag-over-top","drag-over-bot"));}
-function onDrop(e){
-  e.preventDefault();
-  const card=e.target.closest(".card");
-  if(card)card.classList.remove("drag-over-top","drag-over-bot");
-  if(!dragSrc||!card||dragSrc.cid!==card.dataset.cid||dragSrc.pid===card.dataset.pid)return cleanDrag();
-  const br=S.branches.find(b=>String(b.character_id)===dragSrc.cid);if(!br)return cleanDrag();
+
+function updatePlaceholder(cl,clientY){
+  const pos=resolveDropPosition(cl,clientY);if(!pos)return false;
+  if(pos.target===dragOverEl && pos.half===dragHalf)return true; // 已到位,不动作
+  if(Math.abs(clientY-lastSwitchY)<DRAG_SWITCH_DIST)return true; // 距离不够,保持稳定
+  dragOverEl=pos.target;dragHalf=pos.half;placePh(pos.target,pos.half);
+  lastSwitchY=clientY;
+  return true;
+}
+/* 自动滚动:仅窄屏/手机(≤900px)。拖到滚动容器顶/底边缘时持续滚动并实时重定位占位槽。
+   宽屏桌面 #leftCol 占满全高,原生 auto-scroll 可用,不进此路(蕾卡确认宽屏没问题) */
+function placeAt(cl,y){const pos=resolveDropPosition(cl,y);if(!pos)return;dragOverEl=pos.target;dragHalf=pos.half;placePh(pos.target,pos.half);lastSwitchY=y;}
+function startAutoScroll(sc){
+  if(typeof matchMedia==='undefined'||!matchMedia('(max-width:900px)').matches)return; // 仅窄屏/手机:宽屏用浏览器原生 auto-scroll
+  autoScrollCl=sc;if(autoRAF)return;
+  const tick=()=>{
+    if(!autoScrollCl||!dragPh){stopAutoScroll();return;}
+    const rect=autoScrollCl.getBoundingClientRect();
+    let v=0;
+    if(autoY!==null){
+      if(autoY<rect.top+AUTOSCROLL_EDGE) v=-(1-(rect.top+AUTOSCROLL_EDGE-autoY)/AUTOSCROLL_EDGE)*AUTOSCROLL_MAX;
+      else if(autoY>rect.bottom-AUTOSCROLL_EDGE) v=(1-(autoY-(rect.bottom-AUTOSCROLL_EDGE))/AUTOSCROLL_EDGE)*AUTOSCROLL_MAX;
+    }
+    if(v!==0){autoScrollCl.scrollTop+=v;placeAt(dragPh.parentElement,autoY);}
+    autoRAF=requestAnimationFrame(tick);
+  };
+  autoRAF=requestAnimationFrame(tick);
+}
+function stopAutoScroll(){if(autoRAF){cancelAnimationFrame(autoRAF);autoRAF=null;}autoScrollCl=null;autoY=null;}
+
+function onDragOver(e){
+  const card=e.target.closest(".card");if(!card||!dragSrc||!dragPh)return;
+  if(card.dataset.cid!==dragSrc.cid)return;
+  const cl=dragPh.parentElement;if(!cl)return;
+  e.preventDefault();e.dataTransfer.dropEffect="move";
+  autoY=e.clientY;
+  updatePlaceholder(cl,e.clientY);
+}
+function dragSrcCard(){return dragSrc?document.querySelector('.card.dragging'):null;}
+function onDragLeave(e){const c=e.target.closest(".card");if(c&&c!==dragSrcCard())c.classList.remove("drag-over-top","drag-over-bot");}
+function cleanDrag(){dragSrc=null;dragOverEl=null;lastSwitchY=null;stopAutoScroll();if(dragPh){dragPh.remove();dragPh=null;}$$(".card").forEach(c=>c.classList.remove("dragging","drag-over-top","drag-over-bot"));}
+
+/* 落点:直接读占位槽 dragPh 在列表里的真实位置(而非鼠标压着哪张卡),
+   这样虚线框停哪就插哪,落在占位槽/空白处也不会被误判成"末尾" */
+function commitDrop(){
+  if(!dragSrc||!dragPh)return false;
+  const cl=dragPh.parentElement;if(!cl)return false;
+  const br=S.branches.find(b=>String(b.character_id)===cl.dataset.cid);if(!br)return false;
   const from=br.order.findIndex(o=>String(o.identifier)===dragSrc.pid);
-  const target=br.order.findIndex(o=>String(o.identifier)===card.dataset.pid);
-  let to=target;
-  if(dragHalf){to=(from<target)?target-1:target;}else{to=(from<target)?target:target+1;}
-  to=Math.max(0,Math.min(br.order.length-1,to));
-  if(from===to)return cleanDrag();
-  const[it]=br.order.splice(from,1);br.order.splice(to,0,it);
-  dragSrc=null;pushHistory("drag");renderList();renderDetail();updateDirty(true);
+  if(from<0)return false;
+  // 数占位槽之前的卡片数(排除被拖起的源卡)= 在"去掉源卡后序列"中的插入索引
+  let k=0,node=cl.firstElementChild;
+  while(node&&node!==dragPh){
+    if(node.classList&&node.classList.contains("card")&&!node.classList.contains("dragging"))k++;
+    node=node.nextElementSibling;
+  }
+  const[it]=br.order.splice(from,1);          // 先移除源卡
+  k=Math.max(0,Math.min(br.order.length,k));    // br.order 此时已不含源卡
+  br.order.splice(k,0,it);
+  return true;
+}
+function onDrop(e){
+  e.preventDefault();e.stopPropagation();
+  if(commitDrop()){dragSrc=null;cleanDrag();pushHistory("drag");renderList();renderDetail();updateDirty(true);}
+  else cleanDrag();
 }
 function onDragEnd(){cleanDrag();}
 function onListDrop(e){
-  const cl=e.target.closest(".cardlist");if(!cl||!dragSrc)return;
-  if(e.target.closest(".card"))return;
-  if(cl.dataset.cid!==dragSrc.cid)return;
-  const br=S.branches.find(b=>String(b.character_id)===cl.dataset.cid);if(!br)return;
-  const from=br.order.findIndex(o=>String(o.identifier)===dragSrc.pid);if(from<0)return;
-  const[it]=br.order.splice(from,1);br.order.push(it);
-  dragSrc=null;pushHistory("drag");renderList();renderDetail();updateDirty(true);
+  e.preventDefault();
+  if(commitDrop()){dragSrc=null;cleanDrag();pushHistory("drag");renderList();renderDetail();updateDirty(true);}
+  else cleanDrag();
 }
 function onListDragOver(e){
-  const cl=e.target.closest(".cardlist");if(!cl||!dragSrc)return;
-  if(!e.target.closest(".card")&&cl.dataset.cid===dragSrc.cid){e.preventDefault();e.dataTransfer.dropEffect="move";}
+  const cl=e.target.closest(".cardlist");if(!cl||!dragSrc||!dragPh||cl.dataset.cid!==dragSrc.cid)return;
+  if(e.target.closest(".card"))return; // 卡片上的 dragover 自己处理
+  e.preventDefault();e.dataTransfer.dropEffect="move";
+  autoY=e.clientY;
+  updatePlaceholder(cl,e.clientY);
 }
 
 /* ---------------- 渲染: 左列 (扁平) ---------------- */
@@ -877,8 +1193,13 @@ function renderList(){
   const main=mainBr();
   const otherB=S.branches.filter(b=>String(b.character_id)!==String(S.mainCid));
   const mainCount=main?main.order.length:0;
-  html+=`<div class="listbanner"><b>${esc(branchLabel(S.mainCid))}</b>
-    <span class="badge cur">编辑目标</span><span class="cnt">${mainCount} 条</span></div>`;
+  const fname=(S.fileName||"未命名预设").replace(/\.json$/i,"");
+  html+=`<div class="listbanner" id="listbannerBtn" title="点击打开预设设置(采样参数等)">
+    <b>${esc(fname)}</b>
+    <span class="cnt">${mainCount} 条</span>
+    <span class="banner-spacer"></span>
+    <span class="badge cur">编辑目标</span>
+    <span class="banner-arrow" title="点击打开设置">▶</span></div>`;
   if(otherB.length){
     const otherInfo=otherB.map(b=>`${b.isChat?'当前卡牌':'分支 #'+b.character_id}(${b.order.length}条)`).join("、");
     html+=`<div style="margin:0 4px 6px;font-size:11px;color:var(--faint)">
@@ -921,9 +1242,10 @@ function renderList(){
       const dtext=posRel?"—":String(depn);
       const preview=(p.content||"").replace(/\s+/g," ").slice(0,42);
       const posBadge=posRel?'<span style="font-size:9.5px;color:var(--usr);background:var(--usr-soft);padding:0 4px;border-radius:3px;margin-left:4px">相对</span>':'<span style="font-size:9.5px;color:var(--sys);background:var(--sys-soft);padding:0 4px;border-radius:3px;margin-left:4px">聊天中</span>';
+      const protectedSys=isProtectedSysId(p.identifier);   // 系统核心(可编辑不可删,但可勾选)
       const picked=(S.multiOn&&S.picked&&S.picked.has(String(p.identifier)))?"multi-picked":"";
       const mcb=(S.multiOn&&!isLockedId(p.identifier))
-        ?`<input type="checkbox" class="mcheck" data-pick="${esc(p.identifier)}" ${picked?'checked':''} title="勾选此条">`
+        ?`<input type="checkbox" class="mcheck" data-pick="${esc(p.identifier)}" ${picked?'checked':''} title="${protectedSys?'可编辑但不可删除':'勾选此条'}">`
         :(S.multiOn?`<span class="mcheck" style="visibility:hidden"></span>`:"");
       html+=`<div class="card ${o.enabled?'':'offcard'} ${sel?'sel':''} ${posRel?'posrel':''} ${picked}"
         draggable="true" data-pid="${esc(p.identifier)}" data-cid="${esc(br.character_id)}">
@@ -934,18 +1256,22 @@ function renderList(){
         <span class="rpt ${role}" title="role: ${esc((p.role||'system'))}"></span>
         <div class="mid">
           <span class="nm${p.name?'':' empty'}">${esc(name)}${posBadge}</span>
-          <span class="sub">${p.marker?'[分隔] ':''}${esc(preview||'<空内容>')}</span>
+          <span class="sub">${protectedSys?'🛡 系统核心 · 可编辑 · 不可删除 · ':''}${p.marker?'[分隔] ':''}${esc(preview||'<空内容>')}</span>
         </div>
         <label class="switch" title="${o.enabled?'启用中':'已停用'} · 点击切换">
           <input type="checkbox" ${o.enabled?'checked':''} data-enable="${esc(p.identifier)}"><span class="sl"></span>
         </label>
         <button class="copybtn" data-copy="${esc(p.identifier)}" title="复制此条(可切到另一页面粘贴)">⧉</button>
         <button class="editbtn" data-edit="${esc(p.identifier)}" title="编辑详情">✎</button>
-        <button class="delbtn" data-del="${esc(p.identifier)}" title="删除此条">🗑</button>
+        <button class="delbtn${protectedSys?' delbtn-locked':''}" data-del="${esc(p.identifier)}" title="${protectedSys?'系统核心提示词 · 不可删除':'删除此条'}"${protectedSys?' aria-disabled="true" tabindex="-1"':''}>🗑</button>
       </div>`;
     });
   html+=`</div>`;
   col.innerHTML=html;
+
+  // listbanner 顶部入口:点击打开预设设置面板
+  const lb=$("#listbannerBtn");
+  if(lb)lb.addEventListener("click",()=>{toggleSettings();});
 
   // 隐藏分支折叠
   const sysF=$("#sysFold");
@@ -986,6 +1312,10 @@ function renderList(){
     cl.addEventListener("drop",onListDrop);
   });
   $$(".editbtn").forEach(b=>b.addEventListener("click",ev=>{ev.stopPropagation();
+    if(String(S.editId)===String(b.dataset.edit))return;   // 点同一卡✎=no-op(避免无意义重渲丢焦点)
+    // 设置面板开着时:有未保存改动→先问是否放弃
+    if(S.settingsOpen&&!closeSettings())return;
+    if(S.editId&&!closeEdit())return;   // 有未保存编辑→先问是否放弃;放弃被取消则不切走
     S.selectedId=b.dataset.edit;S.editId=b.dataset.edit;
     renderList();renderDetail();scrollDetailTop();
   }));
@@ -1003,9 +1333,103 @@ function scrollDetailTop(){const w=$("#detailWrap");if(w)w.scrollTop=0;}
 /* ---------------- 渲染: 右栏详情 ---------------- */
 function renderDetail(){
   const ph=$("#rightPlaceholder"),wrap=$("#detailWrap");
+  // 设置面板:优先级高于条目编辑
+  if(S.settingsOpen&&S.preset){
+    ph.style.display="none";wrap.style.display="block";
+    const fname=(S.fileName||"未命名预设").replace(/\.json$/i,"");
+    // 双击改名:title 用 span 渲染,绑 dblclick 切到 input
+    const dh=$("#dHeadTitle");
+    if(dh){
+      dh.innerHTML=`<span id="dHeadTitleText">${esc(fname)}</span><button class="btn" id="dHeadRename" title="重命名预设(双击标题也可)" style="margin-left:6px;padding:2px 8px;font-size:11px">✎</button>`;
+      const ttxt=$("#dHeadTitleText");
+      if(ttxt){ttxt.ondblclick=()=>enterTitleEdit();}
+      const rbtn=$("#dHeadRename");
+      if(rbtn){rbtn.onclick=()=>enterTitleEdit();}
+    }
+    $("#dHeadId").textContent="";
+    const br=$("#dHeadBranch");if(br){br.textContent="采样参数 / 顶层字段";br.className="badge cur";}
+    // 切换右侧按钮:settingsSave/settingsClose 显示,条目编辑按钮 dSave/dClose 隐藏
+    $("#dSave").style.display="none";
+    $("#dClose").style.display="none";
+    $("#settingsSave").style.display=hasSettingsChanges()?"":"";
+    $("#settingsSave").disabled=!hasSettingsChanges();
+    $("#settingsClose").style.display="";
+    const draft=S.presetDraft||S.preset;
+    const body=$("#detailBody");
+    let html=`<div style="font-size:12px;color:var(--faint);margin-bottom:4px">这些是酒馆预设的<顶层字段>(prompts 数组外)。数字框区间已按酒馆设定页面限制。</div>`;
+    html+=`<div class="fg-grid">`;
+    SETTINGS_FIELDS.forEach(([k,type,label,min,max,step])=>{
+      const v=draft[k];
+      if(type==="num"){
+        const def=SETTINGS_DEFAULTS[k];
+        html+=`<div class="fg">
+          <label>${esc(label)} <span class="hint">${min} ~ ${max}</span></label>
+          <div style="display:flex;gap:6px;align-items:center">
+            <input class="inp" type="number" step="${step}" min="${min}" max="${max}" value="${v!=null?esc(v):''}" data-set="${esc(k)}">
+            <button class="btn" data-reset="${esc(k)}" title="恢复默认值 ${def}">↺ 恢复</button>
+          </div>
+        </div>`;
+      }else if(type==="bool"){
+        html+=`<div class="fg">
+          <label>${esc(label)}</label>
+          <label class="switch"><input type="checkbox" data-set-bool="${esc(k)}" ${v?"checked":""}><span class="sl"></span></label>
+        </div>`;
+      }
+    });
+    html+=`</div>`;
+    body.innerHTML=html;
+    // 绑定 input 事件(数字框)
+    $$("[data-set]").forEach(inp=>{
+      inp.addEventListener("input",()=>{
+        const k=inp.dataset.set;
+        let n=parseFloat(inp.value);
+        if(Number.isFinite(n)){
+          // 区间裁剪到合理范围
+          const min=parseFloat(inp.min),max=parseFloat(inp.max);
+          if(n<min)n=min;
+          if(n>max)n=max;
+        }
+        S.presetDraft[k]=n;
+        S.presetDirty=true;
+        $("#settingsSave")&&$("#settingsSave").removeAttribute("disabled");
+      });
+    });
+    $$("[data-set-bool]").forEach(ch=>{
+      ch.addEventListener("change",()=>{
+        S.presetDraft[ch.dataset.setBool]=ch.checked;
+        S.presetDirty=true;
+        $("#settingsSave")&&$("#settingsSave").removeAttribute("disabled");
+      });
+    });
+    $$("[data-reset]").forEach(b=>{
+      b.addEventListener("click",()=>{
+        const k=b.dataset.reset;const def=SETTINGS_DEFAULTS[k];
+        S.presetDraft[k]=def;S.presetDirty=true;
+        const inp=$(`[data-set="${k}"]`);if(inp)inp.value=def;
+        $("#settingsSave")&&$("#settingsSave").removeAttribute("disabled");
+      });
+    });
+    const sb=$("#settingsSave");if(sb)sb.onclick=()=>commitSettings();
+    const sc=$("#settingsClose");if(sc)sc.onclick=()=>closeSettings();
+    return;
+  }
+  // 非 settings 视图:显示条目编辑按钮,隐藏设置面板按钮
+  $("#dSave").style.display="";
+  $("#dClose").style.display="";
+  $("#settingsSave").style.display="none";
+  $("#settingsClose").style.display="none";
+
   const id=S.editId;
   if(!S.preset||!id){ph.style.display="flex";wrap.style.display="none";return;}
   ph.style.display="none";wrap.style.display="block";
+
+  // 进入编辑态抓快照 + 初始化草稿(只在 editId 真正变化时做一次,避免被 touchReflect 重渲覆盖)
+  if(!S.editSnapshot||String(S.editSnapshot.identifier)!==String(id)){
+    const pForSnap=P(id);
+    S.editSnapshot=pForSnap?JSON.parse(JSON.stringify(pForSnap)):null;
+    S.editDraft=pForSnap?JSON.parse(JSON.stringify(pForSnap)):null;
+    S.editDirty=false;
+  }
 
   // 锁定条目:只读锁定视图(两类:纯order锚点,或 ST保留外部槽位)
   if(isLockedId(id)){
@@ -1044,7 +1468,9 @@ function renderDetail(){
     return;
   }
 
-  const p=P(id);
+  /* 渲染编辑面板用 draft;没有 draft(刚进编辑态未改过)就读 prompt 当前值 */
+  const p=S.editDraft||P(id);
+  const protectedSys=isProtectedSys(p);   // 系统核心(可编辑不可删)
   const br=branchOf(id);
   const role=roleOf(p);
   const pos=parseInt(p.injection_position,10);const posRel=pos!==1;
@@ -1134,7 +1560,9 @@ function renderDetail(){
     </div>
     <div style="display:flex;gap:8px;padding-top:4px">
       <button class="btn" id="edCopy">⧉ 复制此条</button>
-      <button class="btn danger" id="edDelete">🗑 删除此条</button>
+      ${protectedSys
+        ?`<button class="btn" disabled title="🛡 系统核心提示词:可编辑,但为预设骨架不可删除">🛡 系统核心 · 不可删除</button>`
+        :`<button class="btn danger" id="edDelete">🗑 删除此条</button>`}
     </div>
   `;
 
@@ -1153,14 +1581,58 @@ function renderDetail(){
   $("#edDown").addEventListener("click",ev=>{ev.stopPropagation();moveInBranch(p.identifier,1);});
   $("#edEnable").addEventListener("change",ev=>{ev.stopPropagation();setEnabled(p.identifier,ev.target.checked);});
   if($("#edMarker")){$("#edMarker").addEventListener("change",ev=>{const pp=P(p.identifier);if(pp){pp.marker=ev.target.checked;}pushHistory("mark");renderDetail();});}
-  $("#edDelete").addEventListener("click",()=>deleteTarget(p.identifier));
+  const edDelBtn=$("#edDelete");
+  if(edDelBtn)edDelBtn.addEventListener("click",()=>deleteTarget(p.identifier));
   $("#edCopy").addEventListener("click",ev=>{ev.stopPropagation();copyTarget(p.identifier);});
   $("#edNewBelow").addEventListener("click",()=>{
     const cid=br?br.character_id:(S.branches.find(b=>b.isChat)||S.branches[0]).character_id;
     const idx=br?br.order.findIndex(o=>String(o.identifier)===String(p.identifier))+1:0;
     addToBranch(cid,idx,true);
   });
-  $("#dClose").onclick=()=>{S.editId=null;renderDetail();};
+  /* 提示:输入框/角色/位置按钮的修改都通过 setName 等写草稿并 markDirty */
+  const edSave=$("#dSave");
+  if(edSave&&S.editDirty)edSave.style.outline="2px solid var(--acc)";
+  $("#dSave").onclick=()=>commitEdit();
+  $("#dClose").onclick=()=>closeEdit();
+}
+
+/* ----- 编辑会话:save / 放弃 / 关 ----- */
+function fieldsEqual(a,b){return JSON.stringify(a)===JSON.stringify(b);}
+function currentEdits(){return S.editId?P(S.editId):null;}
+function hasUnsavedEdits(){
+  if(!S.editDirty||!S.editSnapshot||!S.editDraft||!S.editId)return false;
+  return !fieldsEqual(S.editSnapshot,S.editDraft);
+}
+function commitEdit(){
+  if(!S.editId||!S.editDraft)return;
+  if(!hasUnsavedEdits()){toast("没有改动,无需保存");return;}
+  // 把草稿写回 prompt
+  const idx=S.prompts.findIndex(p=>String(p.identifier)===String(S.editId));
+  if(idx>=0)S.prompts[idx]=JSON.parse(JSON.stringify(S.editDraft));
+  pushHistory("edit");
+  S.editSnapshot=JSON.parse(JSON.stringify(S.editDraft));
+  S.editDirty=false;
+  const edSave=$("#dSave");if(edSave)edSave.style.outline="";
+  updateDirty(true);
+  renderList();           // 立即同步左列显示(用户直觉:保存即生效)
+  toast("已保存(可自由切换/关闭窗口)");
+}
+/* 关闭编辑的统一路径。force=true 时跳过确认直接关(用于已放弃后清理)
+   返回 false = 用户在确认框里选了取消,调用方应停在原状态不动 */
+function closeEdit(force){
+  if(!S.editId)return true;
+  if(!force&&hasUnsavedEdits()){
+    if(!confirm("放弃本次编辑?所有改动将还原。"))return false;
+    // 还原到 snapshot(此时 draft 不必处理,因为下面要丢弃)
+    const idx=S.prompts.findIndex(p=>String(p.identifier)===String(S.editId));
+    if(idx>=0&&S.editSnapshot){
+      S.prompts[idx]=JSON.parse(JSON.stringify(S.editSnapshot));
+    }
+    toast("已放弃本次编辑");
+  }
+  S.editId=null;S.editSnapshot=null;S.editDraft=null;S.editDirty=false;
+  renderDetail();renderList();updateDirty(true);
+  return true;
 }
 
 function DEPTH_TIP(d){
@@ -1178,10 +1650,40 @@ function applyPositionLock(root,posRel){
 
 /* ---------------- 历史(撤销/重做) ---------------- */
 const HIST={stack:[],idx:-1},HMAX=60;
-function snapState(){return{prompts:S.prompts.map(p=>({...p})),branches:S.branches.map(b=>({character_id:b.character_id,isChat:b.isChat,order:b.order.map(o=>({...o}))})),mainCid:S.mainCid,selectedId:S.selectedId,editId:S.editId};}
-function resetHistory(){HIST.stack=[snapState()];HIST.idx=0;updateBtns();}
+function snapState(){return{
+  prompts:S.prompts.map(p=>({...p})),
+  branches:S.branches.map(b=>({character_id:b.character_id,isChat:b.isChat,order:b.order.map(o=>({...o}))})),
+  mainCid:S.mainCid,selectedId:S.selectedId,editId:S.editId,
+  // 预设元数据(S.preset 的元数据部分;prompts/prompt_order 已有 prompts/branches 覆盖)
+  preset:S.preset?JSON.parse(JSON.stringify(S.preset)):null,
+  // 多选 UI 状态纳入快照(可跨会话撤销回溯);锚点 idx 用模块级 _anchorIdx 独立记录,不入快照
+  multiOn:S.multiOn,picked:Array.from(S.picked||[]),
+};}
+function resetHistory(){_anchorIdx=null;HIST.stack=[snapState()];HIST.idx=0;updateBtns();}
 function pushHistory(){HIST.stack=HIST.stack.slice(0,HIST.idx+1);HIST.stack.push(snapState());if(HIST.stack.length>HMAX)HIST.stack.shift();HIST.idx=HIST.stack.length-1;updateBtns();}
-function restoreSnap(s){S.prompts=s.prompts.map(p=>({...p}));S.branches=s.branches.map(b=>({...b,order:b.order.map(o=>({...o}))}));if(s.mainCid)S.mainCid=s.mainCid;S.selectedId=s.selectedId;S.editId=s.editId;}
+function restoreSnap(s){
+  S.prompts=s.prompts.map(p=>({...p}));
+  S.branches=s.branches.map(b=>({...b,order:b.order.map(o=>({...o}))}));
+  if(s.mainCid)S.mainCid=s.mainCid;S.selectedId=s.selectedId;S.editId=s.editId;
+  // 还原预设元数据:深拷贝回 S.preset;prompts/branches 等已自己管
+  if(s.preset){
+    S.preset=JSON.parse(JSON.stringify(s.preset));
+    // 设置面板若打开,同步刷新 draft
+    if(S.presetDraft){
+      for(const[k,,,min,max] of SETTINGS_FIELDS){
+        if(S.presetDraft&&s.preset[k]!==undefined)S.presetDraft[k]=s.preset[k];
+      }
+    }
+  }
+  // 还原多选 UI 状态
+  S.multiOn=!!s.multiOn;S.picked=new Set(s.picked||[]);
+  if(!S.multiOn)_anchorIdx=null;    // 撤销到非多选态(进入前)时清除锚点
+  if(s.multiOn){document.body.classList.add("multi-on");$("#multiBar")&&$("#multiBar").classList.add("show");}
+  else{document.body.classList.remove("multi-on");$("#multiBar")&&$("#multiBar").classList.remove("show");}
+  const b=$("#btnMulti");
+  if(b){if(s.multiOn){b.textContent="☑ 取消多选";b.classList.add("primary");}else{b.textContent="☑ 多选";b.classList.remove("primary");}}
+  refreshMultiBar&&refreshMultiBar();
+}
 function undo(){if(HIST.idx<=0)return;HIST.idx--;restoreSnap(HIST.stack[HIST.idx]);renderList();renderDetail();updateDirty(true);updateBtns();}
 function redo(){if(HIST.idx>=HIST.stack.length-1)return;HIST.idx++;restoreSnap(HIST.stack[HIST.idx]);renderList();renderDetail();updateDirty(true);updateBtns();}
 function updateBtns(){$("#btnUndo").disabled=HIST.idx<=0;$("#btnRedo").disabled=HIST.idx>=HIST.stack.length-1;}
@@ -1211,9 +1713,15 @@ function doExport(){
   setTimeout(()=>URL.revokeObjectURL(a.href),1000);
   updateDirty(false);toast("✅ 导出 "+name);
 }
-function updateDirty(on){Dirty.on=!!on;$("#dirtyBar").classList.toggle("show",on);}
+function updateDirty(on){
+  const wasOn=Dirty.on;
+  Dirty.on=!!on;
+  if(!on) Dirty.closed=false;            // 脏状态清除后,重置关闭标志,下次变脏再次提醒
+  else if(!wasOn && on) Dirty.closed=false; // 从干净变脏时,确保提示重新出现
+  $("#dirtyBar").classList.toggle("show", Dirty.on && !Dirty.closed);
+}
 /* 脏改动标记:用于刷新/关页拦截(beforeunload)与 dirtyBar 显示 */
-const Dirty={on:false};
+const Dirty={on:false, closed:false};
 
 /* ---------------- 主题 (日/夜) ---------------- */
 function applyTheme(t){
@@ -1239,18 +1747,31 @@ $("#btnPaste").addEventListener("click",pasteFromClipboard);
 $("#btnAddTop").addEventListener("click",addToChat);
 $("#btnMulti").addEventListener("click",toggleMulti);
 $("#mbCopy").addEventListener("click",multiCopy);
+$("#mbEnable").addEventListener("click",()=>multiSetEnabled(true));
+$("#mbDisable").addEventListener("click",()=>multiSetEnabled(false));
 $("#mbDel").addEventListener("click",multiDelete);
-$("#mbDone").addEventListener("click",cleanupMulti);   // 完成:保留删除修改,退出多选
+$("#mbDone").addEventListener("click",finishMulti);   // 完成:保留改动,退出多选
+$$("#mbAllCheck").forEach(el=>el.addEventListener("change",toggleSelectAll));
 $("#btnExport").addEventListener("click",doExport);
 $("#btnTheme").addEventListener("click",toggleTheme);
 $("#btnAbout").addEventListener("click",()=>{$("#aboutModal").style.display="flex";});
 $("#aboutClose").addEventListener("click",()=>{$("#aboutModal").style.display="none";});
 $("#aboutModal").addEventListener("click",ev=>{if(ev.target.id==="aboutModal")$("#aboutModal").style.display="none";});
+$("#dirtyBarClose").addEventListener("click",()=>{Dirty.closed=true;$("#dirtyBar").classList.remove("show");});
 document.addEventListener("keydown",ev=>{
   const t=document.activeElement&&document.activeElement.tagName;
   const inI=(t==="INPUT"||t==="TEXTAREA"||t==="SELECT");
-  if((ev.ctrlKey||ev.metaKey)&&ev.key.toLowerCase()==="s"){ev.preventDefault();doExport();}
-  else if(ev.key==="Escape"){if(S.editId){S.editId=null;renderDetail();}else{S.selectedId=null;renderList();}}
+  // 文本输入框内,只拦 Ctrl/Cmd+S(导出快捷键)和 Esc(关闭编辑),其他键(Ctrl+X/Z/Y/A/C/V)
+  // 全部交给浏览器原生处理,避免干扰文本编辑和撤销栈。
+  if((ev.ctrlKey||ev.metaKey)&&ev.key.toLowerCase()==="s"){
+    if(inI)ev.preventDefault();   // 编辑框内也要拦下,免得弹保存网页
+    doExport();
+  } else if(ev.key==="Escape"){
+    // 设置面板打开时优先关设置,其次编辑
+    if(S.settingsOpen)closeSettings();
+    else if(S.editId)closeEdit();
+    else{S.selectedId=null;renderList();}
+  }
 });
 /* 防手滑:有未保存改动时,刷新/关页/跳走前弹浏览器原生确认框 */
 window.addEventListener("beforeunload",ev=>{
