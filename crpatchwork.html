@@ -1701,7 +1701,7 @@ function renderVars(){
             <button data-act="ren" title="把整份预设里此变量的名字批量替换为新名字">改名</button>
           </div>
           <div class="vdrow">
-            <button data-act="ins" data-k="w" title="在编辑窗口光标处插入 {{setvar::名:: }}">插入定义</button>
+            <button data-act="ins" data-k="w" title="在编辑窗口光标处插入 {{setvar::名::}}，光标停在 }} 前直接填值">插入定义</button>
             <button data-act="ins" data-k="r" title="在编辑窗口光标处插入 {{getvar::名}}">插入引用</button>
           </div>
         </div>
@@ -1835,7 +1835,7 @@ function renameVar(oldN,newN){
 function insertVarMacro(name,kind){
   const ta=$("#edContent");
   if(!ta||!S.editId){toast("先打开一个条目的编辑窗口,再插入宏");return;}
-  const macro=kind==="w"?("{{setvar::"+name+":: }}"):("{{getvar::"+name+"}}");
+  const macro=kind==="w"?("{{setvar::"+name+"::}}"):("{{getvar::"+name+"}}");
   const s=ta.selectionStart??ta.value.length,e=ta.selectionEnd??s;
   const v=ta.value.slice(0,s)+macro+ta.value.slice(e);
   ta.value=v;
@@ -2374,6 +2374,9 @@ $("#btnTheme").addEventListener("click",toggleTheme);
 $("#vbList").addEventListener("click",()=>setCol("list",$("#leftCol").classList.contains("off")));
 $("#vbVar").addEventListener("click",()=>setCol("var",!$("#varCol").classList.contains("on")));
 // 变量栏事件委托(#varCol 是静态容器,renderVars 只换内层):点行=定位,点排序钮=切换
+$("#varCol").addEventListener("mousedown",ev=>{   // 工具栏经典手法:按抽屉按钮不抢编辑框焦点
+  if(ev.target.closest("[data-act]"))ev.preventDefault();   // 否则 mousedown 让 textarea 失焦→touchReflect 的失焦重建把抽屉连按钮一起拆掉,click 落空(偶数次插入失灵的元凶)
+});
 $("#varCol").addEventListener("click",ev=>{
   if(ev.target.closest("#varSort")){S.varSort=(S.varSort==="alpha")?"heat":"alpha";renderVars();return;}
   const act=ev.target.closest("[data-act]");
