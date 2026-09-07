@@ -165,23 +165,118 @@
     flex:1 1 0; min-height:0;          /* 关键：让 workspace 在 flex-column body 里可收缩 */
     display:flex; flex-direction:row; min-width:0;
   }
+  /* 左区:视图行(常驻) + 变量栏 + 条目栏。整块可收缩,宽度由内容撑开 */
+  .leftzone{
+    flex:0 0 auto; display:flex; flex-direction:column;
+    height:100%; min-width:0;
+    background:var(--bg);
+  }
+  .leftcols{flex:1 1 0; min-height:0; min-width:0; display:flex; flex-direction:row}
+  #viewbar{flex:0 0 auto; display:flex; align-items:stretch; gap:8px; padding:10px 10px 0}
+  .vbBtn{
+    flex:0 0 auto; display:flex; align-items:center; gap:5px; white-space:nowrap;
+    padding:0 12px; font-size:12px; font-weight:600; font-family:inherit;
+    background:var(--panel); border:1px solid var(--line); border-radius:10px;
+    color:var(--muted); cursor:pointer; user-select:none; transition:.12s;
+  }
+  .vbBtn:hover{border-color:var(--acc); color:var(--acc)}
+  .vbBtn.on{background:var(--acc-soft); border-color:var(--acc); color:var(--acc)}
+  #viewbar .listbanner{flex:1 1 auto; min-width:0; margin:0}
+  /* 变量栏:默认收起,打开时"挤"在条目栏左侧(条目栏固定宽,被整体推右) */
+  #varCol{
+    flex:0 0 auto; width:210px; min-width:150px; height:100%;
+    overflow-y:auto; overflow-x:hidden;
+    padding:10px; background:var(--bg2,var(--bg));
+    display:none;
+  }
+  #varCol.on{display:block}
+  #leftCol.off{display:none}
+  .varPh{
+    padding:18px 10px; text-align:center; font-size:12px; color:var(--muted);
+    border:1px dashed var(--line); border-radius:10px;
+  }
+  /* 变量栏内容:头部(计数+排序切换) + 变量行列表 */
+  .varhead{display:flex;align-items:center;justify-content:space-between;margin:0 2px 8px}
+  .varhead .vt{font-size:12px;color:var(--muted)}
+  .varhead b{color:var(--fg)}
+  #varSort{
+    font-size:11px;padding:2px 8px;border:1px solid var(--line);border-radius:6px;
+    background:var(--bg);cursor:pointer;color:var(--muted);
+  }
+  #varSort:hover{color:var(--fg);border-color:var(--acc)}
+  .varlist{display:flex;flex-direction:column;gap:3px}
+  .varrow{
+    display:flex;align-items:center;gap:6px;
+    padding:5px 8px;border:1px solid var(--line);border-radius:8px;cursor:pointer;
+    background:var(--bg);transition:background .1s,border-color .1s;
+  }
+  .varrow:hover{border-color:var(--acc)}
+  .varrow.sel{border-color:var(--acc);background:var(--acc-soft,var(--tint))}
+  .varrow .vname{
+    display:block;font-size:12px;font-weight:600;color:var(--fg);
+    overflow:hidden;text-overflow:ellipsis;white-space:nowrap;
+  }
+  .varrow .vmeta{display:block;font-size:10px;color:var(--faint);margin-top:1px}
+  /* 变量行抽屉:箭头展开,内含改名/插入宏 */
+  .varrow .vtw{flex:0 0 auto;width:20px;padding:5px 0;margin:-5px 0;cursor:pointer;user-select:none;
+    display:flex;align-items:center;justify-content:center}
+  .varrow .vtw::before{content:"";display:block;width:0;height:0;
+    border-left:8px solid var(--muted);border-top:5.5px solid transparent;border-bottom:5.5px solid transparent;
+    transition:transform .12s,border-left-color .1s}
+  .varrow .vtw:hover::before{border-left-color:var(--acc)}
+  .varrow.open .vtw::before{transform:rotate(90deg)}
+  .varrow .vmain{flex:1;min-width:0}
+  .vardrawer{display:none;border:1px solid var(--line);border-top:0;border-radius:0 0 8px 8px;
+    padding:6px 8px;background:var(--bg)}
+  .varitem.open .vardrawer{display:block}
+  .varitem.open .varrow{border-bottom-left-radius:0;border-bottom-right-radius:0}
+  .vdrow{display:flex;gap:6px;margin-top:6px;align-items:center}
+  .vdrow:first-child{margin-top:0}
+  .vdrow input{flex:1;min-width:0;font-size:11px;padding:3px 6px;border:1px solid var(--line);
+    border-radius:6px;background:var(--bg);color:var(--fg)}
+  .vdrow input:focus{border-color:var(--acc);outline:none}
+  .vdrow button{font-size:11px;padding:3px 8px;border:1px solid var(--line);border-radius:6px;
+    background:var(--tint,var(--bg));color:var(--fg);cursor:pointer;white-space:nowrap}
+  .vdrow button:hover{border-color:var(--acc)}
+  .varfoot{margin-top:8px;font-size:10.5px;color:var(--muted);padding:0 2px}
+  /* 变量定位:选中变量后,含它的条目高亮,其余条目变暗 */
+  #leftCol.varfilter .card{opacity:.35}
+  #leftCol.varfilter .card.varhit{opacity:1;box-shadow:0 0 0 2px var(--acc)}
   #leftCol{
-    width:480px; min-width:340px; flex:0 0 auto;
+    width:480px; min-width:300px; flex:0 0 auto;
     height:100%;                        /* 关键：拿到实际高度，让 overflow-y 有意义 */
     overflow-y:scroll;                   /* 永远显示滚动条槽，强制可见 */
     overflow-x:hidden;
     padding:10px; background:var(--bg);
-    border-right:1px solid var(--line);
     scrollbar-gutter:stable;
   }
   #rightCol{
     flex:1 1 0; min-width:0; height:100%;
     overflow-y:auto; overflow-x:hidden; background:var(--panel);
   }
+  /* 可拖拽分隔条:各区宽度交给用户自己拖 */
+  .splitter{flex:0 0 auto; width:6px; position:relative; cursor:col-resize; background:transparent}
+  .splitter::after{
+    content:""; position:absolute; top:0; bottom:0; left:2px; right:2px;
+    background:var(--line); transition:background .12s,left .12s,right .12s;
+  }
+  .splitter:hover::after,.splitter.dragging::after{background:var(--acc); left:1px; right:1px}
+  body.resizing,body.resizing *{cursor:col-resize!important; user-select:none}
+  #varCol:not(.on)+.splitter{display:none}   /* 变量栏收起时,它右边那条也跟着藏 */
   @media (max-width:900px){
     .workspace{flex-direction:column}
-    #leftCol{width:auto; min-width:0; height:auto; max-height:48vh; border-right:none; border-bottom:1px solid var(--line)}
+    .splitter{display:none}                  /* 纵向布局下不需要横向拖拽 */
+    /* 窄屏:整个左区变成上半屏,内部改为整体滚动(不再让单栏自己滚) */
+    .leftzone{width:auto; min-width:0; height:auto; max-height:48vh; border-right:none; border-bottom:1px solid var(--line)}
+    .leftcols{overflow-y:auto}
+    #leftCol{width:auto; min-width:0; height:auto; overflow:visible}
+    #varCol{width:200px; min-width:0; height:auto; overflow:visible}
     #rightCol{height:auto}
+  }
+  /* 窄屏保护:窗口窄于 1100px 时变量栏强制不显示(JS 也会拦住按钮),避免三栏全崩 */
+  @media (max-width:1100px){
+    #varCol.on{display:none}
+    #spVar{display:none}                 /* 变量栏藏了,它的拖拽条也别留孤零零一条线 */
   }
 
   /* ---------- flat list (no branch headers) ---------- */
@@ -213,17 +308,43 @@
   .card:hover{background:#f6f8ff}
   .card.sel{background:var(--acc-soft); border-color:var(--acc)}
   .card.offcard .nm{text-decoration:line-through; opacity:.55}
+  /* 聚焦信号:revealCard 滑到卡片后描边闪两下,被动换位(撤回/远距离移动)的卡能被肉眼锁定 */
+  @keyframes cardflash{0%,100%{box-shadow:0 0 0 0 rgba(0,0,0,0)}25%,75%{box-shadow:0 0 0 3px var(--acc)}50%{box-shadow:0 0 0 0 rgba(0,0,0,0)}}
+  .card.reveal-flash{animation:cardflash 1.2s ease}
   .grip{color:var(--faint); font-size:14px; cursor:grab; user-select:none; flex:0 0 auto; line-height:1; padding:0 2px}
   .grip:active{cursor:grabbing}
   .ordpill{
-    font-size:10.5px; color:var(--faint); background:var(--tint); padding:1px 5px; border-radius:4px;
-    font-variant-numeric:tabular-nums; flex:0 0 auto;
+    font-size:10.5px; color:var(--faint); background:var(--tint); padding:1px 2px; border-radius:4px;
+    font-variant-numeric:tabular-nums; flex:0 0 auto; font-weight:400;
+    /* 真·固定方块:width+max-width 双锁,内容再宽也撑不开,只靠字号自适应 */
+    box-sizing:border-box; width:22px; min-width:22px; max-width:22px;
+    display:inline-flex; align-items:center; justify-content:center;
+    overflow:hidden; white-space:nowrap; line-height:1.45;
+    cursor:grab;                          /* 序号方格兼作拖拽把手(窄模式下 grip 隐藏后它就是唯一把手) */
   }
-  .dchip{font-size:10px; font-weight:700; border-radius:4px; padding:1px 4px; flex:0 0 auto}
+  .ordpill:active{cursor:grabbing}
+  .dchip{
+    font-size:10px; font-weight:400; border-radius:4px; padding:1px 2px; flex:0 0 auto;
+    /* 与序号同宽;锁图标 / 深度 / @N 全部装进这个固定方块 */
+    box-sizing:border-box; width:22px; min-width:22px; max-width:22px;
+    display:inline-flex; align-items:center; justify-content:center;
+    overflow:hidden; white-space:nowrap; line-height:1.45;
+  }
+  /* 内容变长变短时只改字号,方块尺寸恒定 */
+  .l3{font-size:9px}
+  /* emoji 字形天生偏宽,单独压字号(配合 VS15 文本呈现,不触发彩色 emoji 放大) */
+  .chip-ic{font-size:9px; line-height:1; font-style:normal}
   .d0{background:#eef1f6;color:#7b8496}.d1{background:var(--sys-soft);color:var(--sys)}
   .d2{background:var(--usr-soft);color:var(--usr)}.d3{background:#fff2e2;color:#c77800}
   .d4{background:var(--dang-soft);color:#d9534f}
   .dna{background:#f5f6fa;color:var(--faint);font-style:italic;font-weight:400}
+  /* 紧凑卡片模式(左区<480px 自动应用):让名称成为视觉焦点,其他元素收缩或隐藏。
+     触发:JS 通过 ResizeObserver 监测 #leftCol 宽度,跨越 480px 边界时切换 .narrow class。
+     注意:动作按钮不隐藏——opacity:0 不释放空间,藏了也白藏。 */
+  #leftCol.narrow .card{padding:5px 7px; gap:5px}
+  #leftCol.narrow .ordpill{opacity:.65}       /* 方块尺寸恒定,只淡化,不缩格子 */
+  #leftCol.narrow .grip{display:none}          /* 序号方格兼作拖拽把手,grip 图标让位 */
+  #leftCol.narrow .sub{font-size:10.5px}
   .rpt{width:8px;height:8px;border-radius:50%;flex:0 0 auto}
   .rpt.system{background:var(--sys)}.rpt.user{background:var(--usr)}.rpt.assistant{background:var(--ast)}
   .mid{flex:1; min-width:0; display:flex; flex-direction:column; line-height:1.3}
@@ -303,6 +424,25 @@
   }
   .inp:focus,.txa:focus,.sel:focus{outline:none; border-color:var(--acc); box-shadow:0 0 0 2px var(--acc-soft)}
   .txa{font-family:"Cascadia Code","Consolas",monospace; font-size:12.5px; resize:vertical; min-height:180px; line-height:1.6}
+  /* ---- 变量高亮编辑器:textarea 透明底 + 背后镜像层画变量色块 ----
+     镜像层(varhl)与 textarea 同字体同 padding,内容由 JS 按 {{宏}} 位置生成 span 色块;
+     textarea 的文字保持正常显示(镜像层文字透明),滚动/输入/改尺寸三路同步。 */
+  .varwrap{position:relative}
+  .varwrap .txa{position:relative; z-index:2; background:transparent}
+  .varhl{
+    position:absolute; z-index:1; overflow:hidden; border-radius:8px;
+    color:transparent; pointer-events:none; user-select:none;
+    white-space:pre-wrap; word-wrap:break-word; overflow-wrap:break-word;
+  }
+  .varhl .vhl-w{background:rgba(59,130,246,.22); box-shadow:inset 0 0 0 1px rgba(59,130,246,.35); border-radius:4px;
+    box-decoration-break:clone; -webkit-box-decoration-break:clone}
+  .varhl .vhl-r{background:rgba(34,197,94,.20); box-shadow:inset 0 0 0 1px rgba(34,197,94,.35); border-radius:4px;
+    box-decoration-break:clone; -webkit-box-decoration-break:clone}
+  /* 变量栏选中某变量后,编辑器里所有同名宏色块加深描边(buildVarHl 按 S.varSel 附加 .vhl-on) */
+  .varhl .vhl-w.vhl-on{background:rgba(59,130,246,.38); box-shadow:inset 0 0 0 2px rgba(59,130,246,.8)}
+  .varhl .vhl-r.vhl-on{background:rgba(34,197,94,.34); box-shadow:inset 0 0 0 2px rgba(22,163,74,.8)}
+  /* 悬停命中变量色块时 textarea 换手型(色块画在镜像层拿不到 hover,由 JS 探测后加类) */
+  .varwrap .txa.varhover{cursor:pointer}
   .row2{display:flex; gap:14px; flex-wrap:wrap}
   .row2 .fg{flex:1; min-width:160px}
   .chiprow{display:flex; flex-wrap:wrap; gap:6px}
@@ -399,7 +539,27 @@
 </div>
 
 <div class="workspace" data-page-node-id="0Djt27AwfhWn6BGDBVtXg4">
-  <div id="leftCol" data-page-node-id="cb7f5IsV6wnlGCKFS3io3f"></div>
+  <div class="leftzone">
+    <!-- 视图行:常驻于两栏之上,不属于任何一栏(关闭任一栏都不会消失) -->
+    <div id="viewbar">
+      <button class="vbBtn" id="vbVar" title="显示 / 隐藏 变量栏(扫出所有 {{占位符}})">χ 变量</button>
+      <button class="vbBtn" id="vbList" title="显示 / 隐藏 条目栏">🗂 条目</button>
+      <div class="listbanner" id="listbannerBtn" title="点击打开预设设置(采样参数等)">
+        <b id="vbName">未导入</b>
+        <span class="cnt" id="vbCount">0 条</span>
+        <span class="badge cur">编辑目标</span>
+        <span class="banner-arrow">▶</span>
+      </div>
+    </div>
+    <div class="leftcols">
+      <div id="varCol">
+        <div class="varPh">变量面板<span style="display:block;font-size:11px;color:var(--faint);margin-top:6px">导入预设后自动扫描 {{变量}}</span></div>
+      </div>
+      <div class="splitter" id="spVar" title="拖动调整变量栏宽度(双击恢复默认)"></div>
+      <div id="leftCol" data-page-node-id="cb7f5IsV6wnlGCKFS3io3f"></div>
+    </div>
+  </div>
+  <div class="splitter" id="spMain" title="拖动调整左区 / 编辑区比例(双击恢复默认)"></div>
   <div id="rightCol" data-page-node-id="E44SWFBWViUUBgu0kzguFj">
     <div class="placeholder" id="rightPlaceholder" data-page-node-id="MkrIepkzBBLHZ2xrrNWeC6">
       <div class="ico" data-page-node-id="2yZd2tpAlG71hOUv9f2RXw">✍️</div>
@@ -475,6 +635,8 @@ let S={
   presetDraft:null,      // 预设元数据草稿(改字段不入 S.preset,save 才写回)
   presetSnapshot:null,   // 打开设置面板时的元数据快照(放弃时还原)
   presetDirty:false,     // 设置面板是否有未保存改动
+  varSel:null,           // 变量栏当前选中的变量名(点列表项高亮含它的条目;再点取消)
+  varSort:"heat",        // 变量列表排序:"heat"=按出现条数降序(默认) | "alpha"=按字母
 };
 const P=id=>S.prompts.find(p=>String(p.identifier)===String(id));
 const isChatB=cid=>Number(cid)===CHAT_CID;
@@ -514,6 +676,25 @@ function isLockedId(id){
   const p=P(id);
   return p?isStReserved(p):true;   // prompts 里也没有 => 也锁定
 }
+/* —— ST 系统提示词的三种形态(按酒馆面板里的真实可编辑范围划分) ——
+   1 纯锚点   order 里有、prompts 里没对象(如 Chat History)
+              → 酒馆里连编辑按钮都没有        → 本工具:全部锁定
+   2 保留槽位 marker + 无 role + 内容空(世界书前后/角色描述/场景/聊天历史等)
+              → 酒馆里能改 name/role/位置,内容由外部填充
+              → 本工具:内容锁死;**name 可改**(改成中文名是真实需求)
+   3 系统核心 system_prompt + 有 role + 有内容(主提示词/NSFW/越狱/增强)
+              → 酒馆里能改 name/role/content,但**位置模式恒为相对,depth 与 injection_order 不可改**
+              → 本工具:位置区段锁死(此前漏了这条,导致能点开改本不该改的字段)
+   0 普通条目 全部可改 */
+function stKind(id){
+  const p=P(id);
+  if(!p)return 1;
+  if(isProtectedSys(p))return 3;
+  if(isStReserved(p))return 2;
+  return 0;
+}
+/* 位置模式是否被酒馆固定(仅类型 3:系统核心提示词恒为相对模式) */
+function isPosFixed(id){return stKind(id)===3;}
 function guessName(p){return(p&&p.name)||(p&&p.role==="system"?"(system)":p&&p.role==="user"?"(user)":(p&&p.role||""))||"(未命名)";}
 function roleOf(p){const r=(p.role||"system").toLowerCase();return r==="user"?"user":r==="assistant"?"assistant":"system";}
 const esc=s=>String(s==null?"":s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
@@ -963,6 +1144,85 @@ function hasSettingsChanges(){
   }
   return false;
 }
+/* ---------- 视图行(条目栏 / 变量栏) ----------
+   视图行是 .leftzone 的第一行,不属于任何一栏 → 关哪一栏它都在,不会把自己锁死。
+   两条规则:①两栏至少留一栏(想关最后一栏会被拦下) ②窄屏时变量栏不展开。 */
+const NARROW_MQ=(window.matchMedia?window.matchMedia("(max-width:1100px)"):null);
+function isNarrow(){return !!(NARROW_MQ&&NARROW_MQ.matches);}
+function updateViewbar(name,count){
+  const n=$("#vbName"),c=$("#vbCount");
+  if(n)n.textContent=name;
+  if(c)c.textContent=count+" 条";
+  refreshViewbar();
+}
+function refreshViewbar(){
+  const col=$("#leftCol"),vc=$("#varCol"),vl=$("#vbList"),vv=$("#vbVar");
+  if(vl)vl.classList.toggle("on",!!(col&&!col.classList.contains("off")));
+  if(vv)vv.classList.toggle("on",!!(vc&&vc.classList.contains("on")));
+}
+function setCol(which,on){
+  const col=$("#leftCol"),vc=$("#varCol");
+  if(!col||!vc)return;
+  const listOn=!col.classList.contains("off");
+  const varOn=vc.classList.contains("on");
+  if(which==="list"){
+    if(!on&&!varOn){toast("至少留一栏");return;}   // 防呆:两栏全关会是一片空白
+    col.classList.toggle("off",!on);
+  }else{
+    if(on&&isNarrow()){toast("窗口太窄,变量栏放不下");return;}
+    if(!on&&!listOn){toast("至少留一栏");return;}
+    vc.classList.toggle("on",on);
+  }
+  refreshViewbar();
+}
+/* ---------- 可拖拽分隔条:各区宽度交给用户 ----------
+   spVar 调变量栏;spMain 调条目栏(左区总宽随之变,编辑区自动补剩余)。
+   下限保证拖不到"看不见":变量栏 ≥150、条目栏 ≥300;上限给编辑区留 ≥360。
+   双击分隔条 = 恢复默认宽度。 */
+const COL_DEF={varCol:"210px",leftCol:"480px"};
+function bindSplitter(sid,tid,min,maxFn){
+  const el=$("#"+sid),tgt=$("#"+tid);
+  if(!el||!tgt)return;
+  el.addEventListener("mousedown",ev=>{
+    if(ev.button!==0)return;
+    ev.preventDefault();
+    const x0=ev.clientX,w0=tgt.getBoundingClientRect().width;
+    el.classList.add("dragging");document.body.classList.add("resizing");
+    const onMove=e=>{
+      const hi=Math.max(min,maxFn());
+      tgt.style.width=Math.max(min,Math.min(hi,w0+(e.clientX-x0)))+"px";
+    };
+    const onUp=()=>{
+      document.removeEventListener("mousemove",onMove);
+      document.removeEventListener("mouseup",onUp);
+      el.classList.remove("dragging");document.body.classList.remove("resizing");
+    };
+    document.addEventListener("mousemove",onMove);
+    document.addEventListener("mouseup",onUp);
+  });
+  el.addEventListener("dblclick",()=>{tgt.style.width=COL_DEF[tid];});
+}
+function listMax(){
+  const vc=$("#varCol");
+  const vw=(vc&&vc.classList.contains("on"))?vc.getBoundingClientRect().width+6:0;
+  return Math.min(900,(window.innerWidth||1280)-360-vw);
+}
+/* ---------- 窄卡片模式:左区<480px 自动切紧凑 ----------
+   改的是:深度徽章隐藏、序号格子收窄、三按钮悬停显、preview 截短到 24 字。
+   ResizeObserver 监听 leftCol 宽度;跨越 480 边界时切 class + 重渲染(只重渲染一次,不每帧抖)。 */
+let _narrowMode=false;
+function applyNarrow(){
+  const col=$("#leftCol");if(!col)return;
+  if(!S.preset){
+    if(_narrowMode){_narrowMode=false;col.classList.remove("narrow");}   /* 卸了数据时清掉状态,避免空状态仍带样式 */
+    return;
+  }
+  const want=col.getBoundingClientRect().width<480;
+  if(want===_narrowMode)return;
+  _narrowMode=want;
+  col.classList.toggle("narrow",want);
+  renderList();
+}
 function toggleSettings(){
   if(!S.preset){toast("先导入一个预设");return;}
   if(S.settingsOpen)closeSettings();else openSettings();
@@ -1016,16 +1276,19 @@ function ed(){return S.editDraft;}
 function setRole(id,r){const p=ed();if(!p)return;p.role=r;markDraftDirty();touchReflect();}
 function setDepth(id,v){
   const p=ed();if(!p)return;
+  if(isPosFixed(id)){toast("🔒 系统核心提示词:injection_depth 由酒馆固定,不可改");return;}
   if(parseInt(p.injection_position,10)!==1)return;   // 相对模式锁定
   let n=parseInt(v,10);if(isNaN(n))n=4;p.injection_depth=Math.max(0,Math.min(6,n));markDraftDirty();touchReflect();
 }
 function setInjOrder(id,v){
   const p=ed();if(!p)return;
+  if(isPosFixed(id)){toast("🔒 系统核心提示词:injection_order 由酒馆固定,不可改");return;}
   if(parseInt(p.injection_position,10)!==1)return;
   let n=parseInt(v,10);if(isNaN(n))n=100;p.injection_order=n;markDraftDirty();touchReflect();
 }
 function setPosition(id,v){
   const p=ed();if(!p)return;
+  if(isPosFixed(id)){toast("🔒 系统核心提示词:位置模式由酒馆固定为相对,不可改");renderDetail();return;}
   let n=parseInt(v,10);if(isNaN(n))n=0;p.injection_position=n===1?1:0;
   // 切到相对时,depth/order 留酒馆自动算的值不动;切到聊天中保留可改
   markDraftDirty();touchReflect();
@@ -1052,12 +1315,39 @@ function touchReflect(){
 }
 
 /* ---------------- 分支内移动 ---------------- */
+/* 列表滑动聚焦:卡片被动换位后滚回视野(已在视野内则不动,block:nearest 不乱跳);
+   到位后描边闪两下(.reveal-flash),没盯着的用户也能一眼锁定 */
+function revealCard(pid){
+  const card=[...$$(".card")].find(c=>c.dataset.pid===String(pid));
+  if(!card)return;
+  if(card.scrollIntoView){try{card.scrollIntoView({behavior:"smooth",block:"nearest"});}catch{}}
+  card.classList.remove("reveal-flash");
+  void card.offsetWidth;   // 强制重排:连续触发时动画能从头重播
+  card.classList.add("reveal-flash");
+  card.addEventListener("animationend",()=>card.classList.remove("reveal-flash"),{once:true});
+  setTimeout(()=>card.classList.remove("reveal-flash"),1400);   // 动画事件丢失(env 不支持)时的保险
+}
+/* 撤回/重做后的顺序差分:位移最大的条目(新出现/复活的条目视为最大位移)滑到它。
+   key 用 分支+条目 复合:同一 identifier 常同时存在于系统层与主分支,单 key 会互相遮蔽位移 */
+function branchOrderMap(){const m=new Map();S.branches.forEach(b=>{const pre=(b.isChat?"chat":b.character_id)+"|";b.order.forEach((o,i)=>{const k=pre+String(o.identifier);if(!m.has(k))m.set(k,i);});});return m;}
+function revealMoved(before){
+  let best=null,bestD=0;
+  S.branches.forEach(b=>{
+    const pre=(b.isChat?"chat":b.character_id)+"|";
+    b.order.forEach((o,i)=>{
+      const k=pre+String(o.identifier),pi=before.get(k);
+      const d=(pi===undefined)?1e9:Math.abs(i-pi);
+      if(d>bestD){bestD=d;best=String(o.identifier);}
+    });
+  });
+  if(best!=null&&bestD>0)revealCard(best);
+}
 function moveInBranch(id,dir){
   const br=branchOf(id);if(!br)return;
   const i=br.order.findIndex(o=>String(o.identifier)===String(id));if(i<0)return;
   const j=i+dir;if(j<0||j>=br.order.length)return;
   const [it]=br.order.splice(i,1);br.order.splice(j,0,it);
-  pushHistory("mv");renderList();renderDetail();updateDirty(true);
+  pushHistory("mv");renderList();renderDetail();updateDirty(true);revealCard(id);
 }
 function setOrderNum(id,val){
   const br=branchOf(id);if(!br)return;
@@ -1065,7 +1355,7 @@ function setOrderNum(id,val){
   if(isNaN(t))t=0;if(t<0)t=0;if(t>=br.order.length)t=br.order.length-1;
   if(t===cur)return;
   const[it]=br.order.splice(cur,1);br.order.splice(t,0,it);
-  pushHistory("ordnum");renderList();renderDetail();updateDirty(true);
+  pushHistory("ordnum");renderList();renderDetail();updateDirty(true);revealCard(id);
 }
 
 /* ---------------- 拖拽换序(同分支内) ---------------- */
@@ -1159,6 +1449,7 @@ function commitDrop(){
   }
   const[it]=br.order.splice(from,1);          // 先移除源卡
   k=Math.max(0,Math.min(br.order.length,k));    // br.order 此时已不含源卡
+  if(k===from){br.order.splice(from,0,it);return false;}   // 放回原位=没发生换序:复原并返回 false,不入撤回栈
   br.order.splice(k,0,it);
   return true;
 }
@@ -1186,7 +1477,7 @@ function renderList(){
   const col=$("#leftCol");
   if(!S.preset){
     col.innerHTML=`<div id="emptyHint"><div class="big">🗂️</div><p>把 <b>SillyTavern 预设 JSON</b> 拖进窗口，或点右上「打开 JSON」。</p><p style="font-size:12px;color:var(--faint)">只改 prompts / prompt_order,其余原样保留。<br>左列卡片可<b>拖拽换序</b>(同分支内);点卡片=选中;点 <b>✎</b>=右侧编辑。</p></div>`;
-    return;
+    renderVars();return;
   }
   let html="";
   // 顶部信息条:编辑对象(角色卡上下文) + 隐藏分支提示(可折叠)
@@ -1194,12 +1485,7 @@ function renderList(){
   const otherB=S.branches.filter(b=>String(b.character_id)!==String(S.mainCid));
   const mainCount=main?main.order.length:0;
   const fname=(S.fileName||"未命名预设").replace(/\.json$/i,"");
-  html+=`<div class="listbanner" id="listbannerBtn" title="点击打开预设设置(采样参数等)">
-    <b>${esc(fname)}</b>
-    <span class="cnt">${mainCount} 条</span>
-    <span class="banner-spacer"></span>
-    <span class="badge cur">编辑目标</span>
-    <span class="banner-arrow" title="点击打开设置">▶</span></div>`;
+  updateViewbar(fname,mainCount);
   if(otherB.length){
     const otherInfo=otherB.map(b=>`${b.isChat?'当前卡牌':'分支 #'+b.character_id}(${b.order.length}条)`).join("、");
     html+=`<div style="margin:0 4px 6px;font-size:11px;color:var(--faint)">
@@ -1208,6 +1494,9 @@ function renderList(){
     </div>`;
   }
   const br=main;
+  // 按"可见字符数"分级:变体选择符(VS15/VS16)不计宽,emoji 按一个码点算
+  const visLen=t=>[...String(t)].filter(c=>c!=="\uFE0E"&&c!=="\uFE0F").length;
+  const lenCls=t=>visLen(t)<=2?"":"l3";   // 方块尺寸恒定:内容超过两位才缩字号(序号 100+ / 徽章异常长)
   html+=`<div class="cardlist" data-cid="${esc(br.character_id)}">`;
   br.order.forEach((o,oi)=>{
       const sel=S.selectedId===o.identifier;
@@ -1221,11 +1510,11 @@ function renderList(){
           data-pid="${esc(o.identifier)}" data-cid="${esc(br.character_id)}" data-anchor="1"
           draggable="true" title="🔒 内容锁定(由酒馆从人物卡/世界设定填充,不可编辑)· 可拖拽换序">
           <span class="grip" style="opacity:.55" title="内容锁定 · 可拖拽换序">⠿</span>
-          <span class="ordpill">${oi+1}</span>
-          <span class="dchip dna">🔒</span>
+          <span class="ordpill ${lenCls(String(oi+1))}">${oi+1}</span>
+          <span class="dchip dna chip-ic" title="🔒 内容锁定 · 由酒馆从人物卡/世界设定填充">🔒</span>
           <span class="rpt system" style="opacity:.5"></span>
           <div class="mid">
-            <span class="nm"><span style="color:var(--sys)">🔒</span> ${esc(dispName)}</span>
+            <span class="nm">${esc(dispName)}</span>
             <span class="sub" style="font-style:italic">${sub}</span>
           </div>
           <span style="font-size:10px;color:var(--faint)">${o.enabled?'':'停用'}</span>
@@ -1239,9 +1528,9 @@ function renderList(){
       const posRel=pos!==1;
       const dep=parseInt(p.injection_depth,10);const depn=isNaN(dep)?0:dep;
       const dcls=posRel?"dna":(depn<=0?"d0":depn===1?"d1":depn===2?"d2":depn===3?"d3":"d4");
-      const dtext=posRel?"—":String(depn);
-      const preview=(p.content||"").replace(/\s+/g," ").slice(0,42);
-      const posBadge=posRel?'<span style="font-size:9.5px;color:var(--usr);background:var(--usr-soft);padding:0 4px;border-radius:3px;margin-left:4px">相对</span>':'<span style="font-size:9.5px;color:var(--sys);background:var(--sys-soft);padding:0 4px;border-radius:3px;margin-left:4px">聊天中</span>';
+      const dtext=posRel?"\u2731\uFE0E":("@"+depn);   // 相对=✱(加粗星号+VS15 文本呈现),聊天中=@深度
+      const previewLimit=col.classList.contains("narrow")?24:42;   // 紧凑模式:预览截短
+      const preview=(p.content||"").replace(/\s+/g," ").slice(0,previewLimit);
       const protectedSys=isProtectedSysId(p.identifier);   // 系统核心(可编辑不可删,但可勾选)
       const picked=(S.multiOn&&S.picked&&S.picked.has(String(p.identifier)))?"multi-picked":"";
       const mcb=(S.multiOn&&!isLockedId(p.identifier))
@@ -1251,11 +1540,11 @@ function renderList(){
         draggable="true" data-pid="${esc(p.identifier)}" data-cid="${esc(br.character_id)}">
         ${mcb}
         <span class="grip" title="拖拽换序(同分支内)">⠿</span>
-        <span class="ordpill" title="${posRel?'相对模式下 order 由酒馆自动算':'本条在分支内 order 序号'}">${oi+1}</span>
-        <span class="dchip ${dcls}" title="${posRel?'相对模式,depth 不可改':'注入深度 '+depn}">${dtext}</span>
+        <span class="ordpill ${lenCls(String(oi+1))}" title="${posRel?'相对模式下 order 由酒馆自动算':'本条在分支内 order 序号'}">${oi+1}</span>
+        <span class="dchip ${dcls} ${lenCls(dtext)}" title="${posRel?'相对模式':'注入深度 @'+depn}">${dtext}</span>
         <span class="rpt ${role}" title="role: ${esc((p.role||'system'))}"></span>
         <div class="mid">
-          <span class="nm${p.name?'':' empty'}">${esc(name)}${posBadge}</span>
+          <span class="nm${p.name?'':' empty'}">${esc(name)}</span>
           <span class="sub">${protectedSys?'🛡 系统核心 · 可编辑 · 不可删除 · ':''}${p.marker?'[分隔] ':''}${esc(preview||'<空内容>')}</span>
         </div>
         <label class="switch" title="${o.enabled?'启用中':'已停用'} · 点击切换">
@@ -1268,10 +1557,6 @@ function renderList(){
     });
   html+=`</div>`;
   col.innerHTML=html;
-
-  // listbanner 顶部入口:点击打开预设设置面板
-  const lb=$("#listbannerBtn");
-  if(lb)lb.addEventListener("click",()=>{toggleSettings();});
 
   // 隐藏分支折叠
   const sysF=$("#sysFold");
@@ -1326,6 +1611,297 @@ function renderList(){
   $$("[data-pick]").forEach(ch=>ch.addEventListener("change",ev=>{
     ev.stopPropagation();togglePick(ch.dataset.pick);
   }));
+  renderVars();   // 变量栏跟随列表刷新:重扫描 + 重放高亮(renderList 重渲染会抹掉 .varhit)
+}
+
+/* ---------------- 变量面板:扫描 {{var}} 宏 → 清单 → 点击定位 ----------------
+   只认变量家族:getvar/setvar/addvar/getglobalvar/setglobalvar。
+   名字 = 宏关键字后的第一段(setvar::name::value 的 name),值贪心归第三段起(不解析值)。
+   解析用括号配对而非正则:值里可以嵌套宏,如 {{setvar::x::{{getvar::y}}}}。 */
+const VAR_MACROS=new Set(["getvar","setvar","addvar","getglobalvar","setglobalvar"]);
+/* 带位置版:[{inner,start,end}](start/end 为含 {{}} 的原文区间,供编辑器点击反查与高亮) */
+function scanMacrosPos(text){
+  const s=String(text||""),out=[];let i=0;
+  while(i<s.length-1){
+    if(s[i]==="{"&&s[i+1]==="{"){
+      let depth=1,j=i+2;
+      while(j<s.length-1&&depth>0){
+        if(s[j]==="{"&&s[j+1]==="{"){depth++;j+=2;}
+        else if(s[j]==="}"&&s[j+1]==="}"){depth--;j+=2;if(depth===0)break;}
+        else j++;
+      }
+      if(depth===0){out.push({inner:s.slice(i+2,j-2),start:i,end:j});i=j;}
+      else i+=2;   // 未闭合:跳过这两个花括号继续扫,不吞掉后面内容
+    }else i++;
+  }
+  return out;
+}
+function extractMacros(text){return scanMacrosPos(text).map(m=>m.inner);}
+/* 单条目的变量引用:[{name, write}]。write=set/add 家族(定义/追加),否则读。 */
+function promptVarRefs(p){
+  const refs=[];
+  for(const t of extractMacros(p&&p.content)){
+    const seg=t.split("::");
+    const kw=(seg[0]||"").trim().toLowerCase();
+    if(!VAR_MACROS.has(kw))continue;
+    const name=(seg[1]||"").trim();
+    if(!name)continue;   // 没名字的残缺宏不计
+    refs.push({name,write:kw.startsWith("set")||kw.startsWith("add")});
+  }
+  return refs;
+}
+/* 全量聚合:按名字归并,记出现在哪些条目 + 读/写次数 */
+function scanVars(){
+  const map=new Map();
+  if(!S.preset)return [];
+  for(const p of S.prompts){
+    const refs=promptVarRefs(p);
+    if(!refs.length)continue;
+    for(const r of refs){
+      let e=map.get(r.name);
+      if(!e){e={name:r.name,entries:new Set(),reads:0,writes:0};map.set(r.name,e);}
+      e.entries.add(p.identifier);r.write?e.writes++:e.reads++;
+    }
+  }
+  return [...map.values()];
+}
+/* 渲染变量栏 + 高亮扫描(选中变量时给含它的卡片加 .varhit,其余压暗) */
+function renderVars(){
+  const vc=$("#varCol"),col=$("#leftCol");
+  if(!vc||!col)return;
+  if(!S.preset){
+    vc.innerHTML=`<div class="varPh">变量面板<span style="display:block;font-size:11px;color:var(--faint);margin-top:6px">导入预设后自动扫描 {{变量}}</span></div>`;
+    return;
+  }
+  const vars=scanVars();
+  if(S.varSel&&!vars.some(v=>v.name===S.varSel))S.varSel=null;   // 选中的变量随编辑消失了→取消选中
+  const heat=S.varSort!=="alpha";
+  vars.sort(heat
+    ?(a,b)=>(b.entries.size-a.entries.size)||a.name.localeCompare(b.name)
+    :(a,b)=>a.name.localeCompare(b.name));
+  let h=`<div class="varhead"><span class="vt">变量 <b>${vars.length}</b></span><button id="varSort" title="${heat?'当前按热度排序,点击改为按字母':'当前按字母排序,点击改为按热度'}">${heat?"🔥":"🔤"}</button></div>`;
+  if(!vars.length){
+    h+=`<div class="varPh">未发现变量宏<br><span style="font-size:11px;color:var(--faint)">支持 getvar / setvar / addvar<br>/ getglobalvar / setglobalvar</span></div>`;
+  }else{
+    h+=`<div class="varlist">`;
+    for(const v of vars){
+      const sel=S.varSel===v.name;
+      const open=S.varOpen===v.name;   // 抽屉展开状态挂在 S 上,重渲染不塌
+      h+=`<div class="varitem${open?' open':''}" data-v="${esc(v.name)}">
+        <div class="varrow${sel?' sel':''}${open?' open':''}" data-v="${esc(v.name)}" title="点击高亮列表中含此变量的条目(再点取消)">
+          <span class="vtw" title="展开操作(改名/插入宏)"></span>
+          <span class="vmain">
+            <span class="vname">${esc(v.name)}</span>
+            <span class="vmeta">${v.entries.size} 条 · 写${v.writes} 读${v.reads}</span>
+          </span>
+        </div>
+        <div class="vardrawer">
+          <div class="vdrow">
+            <input class="vren" value="${esc(v.name)}" spellcheck="false" title="改成新名字,整份预设批量替换">
+            <button data-act="ren" title="把整份预设里此变量的名字批量替换为新名字">改名</button>
+          </div>
+          <div class="vdrow">
+            <button data-act="ins" data-k="w" title="在编辑窗口光标处插入 {{setvar::名:: }}">插入定义</button>
+            <button data-act="ins" data-k="r" title="在编辑窗口光标处插入 {{getvar::名}}">插入引用</button>
+          </div>
+        </div>
+      </div>`;
+    }
+    h+=`</div>`;
+    if(S.varSel)h+=`<div class="varfoot">定位:<b>${esc(S.varSel)}</b> · 高亮含它的条目,再点取消</div>`;
+  }
+  vc.innerHTML=h;
+  col.classList.toggle("varfilter",!!S.varSel);
+  $$(".card").forEach(c=>c.classList.remove("varhit"));
+  if(S.varSel){
+    $$(".card").forEach(c=>{
+      const p=P(c.dataset.pid);
+      if(p&&promptVarRefs(p).some(r=>r.name===S.varSel))c.classList.add("varhit");
+    });
+  }
+}
+
+/* ---------------- 编辑器变量高亮:镜像层画色块 + 点击反查宏定位变量栏 ----------------
+   textarea 不能局部上色,所以在它背后垫一个同字体镜像层(.varhl),按宏位置画色块;
+   文字仍由 textarea 自己画(镜像层文字透明),互不干扰。
+   色彩语义与变量栏一致:写(set/add)=蓝,读(get)=绿。 */
+function macroKind(inner){
+  const kw=(inner.split("::")[0]||"").trim().toLowerCase();
+  if(!VAR_MACROS.has(kw))return null;
+  return (kw.startsWith("set")||kw.startsWith("add"))?"w":"r";
+}
+function buildVarHl(text){
+  let html="",last=0;
+  for(const m of scanMacrosPos(text)){
+    const k=macroKind(m.inner);
+    if(!k)continue;   // 非变量宏:不画块
+    const name=(m.inner.split("::")[1]||"").trim();
+    const on=(S.varSel&&name===S.varSel)?" vhl-on":"";   // 变量栏正选中此变量→加深描边
+    html+=esc(text.slice(last,m.start))+`<span class="vhl-${k}${on}" data-s="${m.start}" data-e="${m.end}" data-n="${esc(name)}">${esc(text.slice(m.start,m.end))}</span>`;
+    last=m.end;
+  }
+  return html+esc(text.slice(last))+"\n";   // 尾补一行,滚到底时高度对齐
+}
+/* 同步镜像层:度量对齐(边距/字体/客户区宽高,消除滚动条占位差) + 内容 + 滚动位置 */
+function refreshVarHl(){
+  const ta=$("#edContent"),hl=$("#varHl");
+  if(!ta||!hl)return;
+  const cs=getComputedStyle(ta);
+  hl.style.fontFamily=cs.fontFamily;hl.style.fontSize=cs.fontSize;hl.style.fontWeight=cs.fontWeight;
+  hl.style.lineHeight=cs.lineHeight;hl.style.letterSpacing=cs.letterSpacing;
+  hl.style.padding=cs.padding;
+  hl.style.left=ta.clientLeft+"px";hl.style.top=ta.clientTop+"px";
+  hl.style.width=ta.clientWidth+"px";hl.style.height=ta.clientHeight+"px";
+  hl.innerHTML=buildVarHl(ta.value);
+  hl.scrollTop=ta.scrollTop;   // overflow:hidden 可编程滚动
+}
+/* 镜像层色块矩形命中:按视觉位置反查宏(相邻宏共享光标缝隙,但矩形从不重叠,
+   所以"点哪儿就是哪儿"),返回 {start,end,name} 或 null。换行宏切成多段,逐段测。 */
+function varSpanAt(x,y){
+  const hl=$("#varHl");if(!hl)return null;
+  for(const sp of hl.querySelectorAll(".vhl-w,.vhl-r")){
+    for(const r of sp.getClientRects()){
+      if(x>=r.left&&x<=r.right&&y>=r.top&&y<=r.bottom)
+        return {start:+sp.dataset.s,end:+sp.dataset.e,name:sp.dataset.n};
+    }
+  }
+  return null;
+}
+/* 点击/双击落点解析宏:优先视觉矩形命中(点哪儿就是哪儿);
+   兜底只用光标严格在宏内部(start<pos<end)的情况——
+   行尾/空白处光标会被浏览器吸附到行末(m.end),不再误判成"点了这个宏" */
+function resolveMacroAt(x,y){
+  const ta=$("#edContent");if(!ta)return null;
+  const hit=varSpanAt(x,y);
+  const m=hit||(()=>{
+    const pos=ta.selectionStart??0;
+    return scanMacrosPos(ta.value).find(mm=>macroKind(mm.inner)&&mm.start<pos&&pos<mm.end)||null;
+  })();
+  if(!m)return null;
+  return {start:m.start,end:m.end,
+    name:m.name||((m.inner||"").split("::")[1]||"").trim()};   // 兜底对象没有 name,从 inner 补
+}
+/* 变量是否已在目录里:目录扫的是已保存数据(S.prompts),草稿里的新变量不在 */
+function varInPanel(name){return scanVars().some(v=>v.name===name);}
+/* 文本内变量改名:只替换变量家族宏里的名字段,大小写不敏感;返回 {text,changed} */
+function renameVarInText(text,oldN,newN){
+  const low=oldN.toLowerCase();
+  const ms=scanMacrosPos(text).filter(m=>{
+    const seg=m.inner.split("::");
+    if(!VAR_MACROS.has((seg[0]||"").trim().toLowerCase()))return false;
+    return (seg[1]||"").trim().toLowerCase()===low;
+  });
+  if(!ms.length)return{text,changed:false};
+  let out="",last=0;
+  for(const m of ms){
+    out+=text.slice(last,m.start);
+    const seg=m.inner.split("::");seg[1]=newN;   // 只换名字段,值段原样保留(哪怕含 ::)
+    out+="{{"+seg.join("::")+"}}";
+    last=m.end;
+  }
+  return{text:out+text.slice(last),changed:true};
+}
+/* 变量批量重命名:整份预设 + 当前编辑草稿同步替换,入撤回栈。
+   变量宏大小写不敏感,所以匹配也大小写不敏感;名字段统一写成新名的规范形 */
+function renameVar(oldN,newN){
+  oldN=(oldN||"").trim();newN=(newN||"").trim();
+  if(!oldN||!newN){toast("名字不能为空");return false;}
+  if(newN===oldN){toast("名字没变");return false;}
+  const clash=scanVars().some(v=>v.name!==oldN&&v.name.toLowerCase()===newN.toLowerCase());
+  if(clash&&!confirm("变量「"+newN+"」已存在,改名后两个变量会合并,继续吗?"))return false;
+  let touched=0;
+  for(const p of S.prompts){
+    const r=renameVarInText(p.content,oldN,newN);
+    if(r.changed){p.content=r.text;touched++;}
+  }
+  if(!touched){toast("没找到「"+oldN+"」的引用?");return false;}
+  let draftHit=false;
+  if(S.editId&&S.editDraft){   // 当前草稿同步:否则保存时旧名字会把这次改名顶回去
+    const r=renameVarInText(S.editDraft.content,oldN,newN);
+    if(r.changed){
+      S.editDraft.content=r.text;markDraftDirty();draftHit=true;
+      const ta=$("#edContent");
+      if(ta){ta.value=r.text;refreshVarHl();}
+    }
+  }
+  if(S.varSel===oldN)S.varSel=newN;       // 选中/展开状态跟着新名字走
+  if(S.varOpen===oldN)S.varOpen=newN;
+  pushHistory();updateDirty(true);
+  renderVars();renderList();
+  toast("已改名「"+oldN+"」→「"+newN+"」:"+touched+" 个条目"+(draftHit?"(含当前草稿)":""));
+  return true;
+}
+/* 抽屉一键插入:在编辑窗口光标处塞宏。定义型留空值并把光标停在 :与}} 之间等用户填 */
+function insertVarMacro(name,kind){
+  const ta=$("#edContent");
+  if(!ta||!S.editId){toast("先打开一个条目的编辑窗口,再插入宏");return;}
+  const macro=kind==="w"?("{{setvar::"+name+":: }}"):("{{getvar::"+name+"}}");
+  const s=ta.selectionStart??ta.value.length,e=ta.selectionEnd??s;
+  const v=ta.value.slice(0,s)+macro+ta.value.slice(e);
+  ta.value=v;
+  setContent(S.editId,v);   // 只进草稿,save 才落盘(与手打完全同路径)
+  const cur=s+(kind==="w"?macro.length-2:macro.length);   // setvar:光标停在 }} 前的空格处
+  try{ta.focus();ta.setSelectionRange(cur,cur);}catch{}
+  refreshVarHl();
+  toast("已插入:"+macro);
+}
+/* 单击文本框 = 定位按钮:命中变量宏 → 变量栏选中该变量并滚到那行。
+   与变量栏一致支持再点取消:点的宏属于当前选中变量 → 取消选中。
+   不反选文本(描边可见,也不覆盖拖选);拖选中(click 时选区非空)直接让路。 */
+function locateVarFromEditor(ev){
+  const ta=$("#edContent");if(!ta)return;
+  if(ta.selectionStart!==ta.selectionEnd)return;   // 用户在拖选:定位不抢戏
+  const m=resolveMacroAt(ev.clientX,ev.clientY);
+  if(!m)return;
+  if(!varInPanel(m.name)){toast("变量「"+m.name+"」尚未保存,保存条目后才能定位");return;}   // 草稿里的新变量:目录还没有,不进选中
+  if(!$("#varCol").classList.contains("on"))setCol("var",true);   // 变量栏没开就帮用户开(窄屏守卫在 setCol 内)
+  const again=(S.varSel===m.name);   // 再点同变量 = 取消(与变量栏行点击一致)
+  S.varSel=again?null:m.name;
+  renderVars();refreshVarHl();   // refreshVarHl:描边跟着选择即时切换,不留旧描边
+  const vc=$("#varCol"),row=[...$$(".varrow")].find(r=>r.dataset.v===m.name);
+  if(row&&vc&&!again){   // 滚到列表中部(用 rect 差算,不依赖 offsetParent);取消时无需滚
+    const d=row.getBoundingClientRect().top-vc.getBoundingClientRect().top;
+    vc.scrollTop+=d-vc.clientHeight/2+row.offsetHeight/2;
+  }
+  toast(again?("已取消定位:"+m.name):("已定位变量:"+m.name));
+}
+/* 双击变量色块 = 复制选中:反选整段宏文本,Ctrl+C 即取;同时定位到该变量。
+   未保存的变量(草稿新打的):复制照常可用,但不进面板选中态 */
+function selectVarForCopy(ev){
+  const ta=$("#edContent");if(!ta)return;
+  const m=resolveMacroAt(ev.clientX,ev.clientY);
+  if(!m)return;
+  const known=varInPanel(m.name);
+  if(known&&S.varSel!==m.name){S.varSel=m.name;renderVars();refreshVarHl();
+    const vc=$("#varCol"),row=[...$$(".varrow")].find(r=>r.dataset.v===m.name);
+    if(row&&vc){
+      const d=row.getBoundingClientRect().top-vc.getBoundingClientRect().top;
+      vc.scrollTop+=d-vc.clientHeight/2+row.offsetHeight/2;
+    }
+  }
+  try{ta.focus();ta.setSelectionRange(m.start,m.end);}catch{}
+  toast(known?"已选中宏文本,Ctrl+C 复制":"已选中宏文本(变量尚未保存,暂不进目录)");
+}
+/* 鼠标悬停探测:色块画在镜像层(pointer-events:none),textarea 收不到对色块的 hover,
+   所以在 mousemove 里手动做矩形命中测试,命中→给 textarea 加 .varhover 换手型光标 */
+function edVarHover(ev){
+  const ta=ev.currentTarget;if(!ta)return;
+  ta.classList.toggle("varhover",!!varSpanAt(ev.clientX,ev.clientY));
+}
+/* 变量栏选中变量(S.varSel)后与编辑器联动:重画镜像层,同名宏加深描边;
+   若首处宏在文本框可视区外 → 平滑滚到它(反向应用:从目录找变量不用肉眼扫)。
+   不反选文本——选中状态只归双击(复制)管,联动场景描边就够看,也不盖住描边 */
+function selectVarInEditor(){
+  const ta=$("#edContent"),hl=$("#varHl");if(!ta)return;
+  refreshVarHl();   // buildVarHl 按 S.varSel 给命中块加 .vhl-on(取消选中时同路径抹掉)
+  if(!S.varSel||!hl)return;
+  const sp=[...hl.querySelectorAll(".vhl-w,.vhl-r")].find(s=>s.dataset.n===S.varSel);
+  if(!sp||sp.offsetTop==null)return;   // 本条不含此变量 / 无布局(jsdom)
+  const visible=sp.offsetTop>=ta.scrollTop&&sp.offsetTop+sp.offsetHeight<=ta.scrollTop+ta.clientHeight;
+  if(visible)return;   // 已在视线内:不打扰
+  const target=Math.max(0,sp.offsetTop-(ta.clientHeight-sp.offsetHeight)/2);
+  try{ta.scrollTo({top:target,behavior:"smooth"});}catch{ta.scrollTop=target;}
+  hl.scrollTop=ta.scrollTop;   // 程序滚动在部分环境不触发 scroll 事件,手动同步镜像
 }
 
 function scrollDetailTop(){const w=$("#detailWrap");if(w)w.scrollTop=0;}
@@ -1453,6 +2029,10 @@ function renderDetail(){
         <b>由酒馆自动填充，无需也不应编辑其内容</b>，否则导回去可能出错。本工具已锁定其内容/删除/启停；
         <b>但左列可拖拽调整它的顺序</b>，拖拽只改 order、不改字段，安全。
       </div>
+      ${pLocked?`<div class="fg">
+        <label>名称 <span class="hint">提示词来自其他地方，不建议修改</span></label>
+        <input class="inp" id="edLockName" value="${esc(pLocked.name||"")}" placeholder="(未命名)">
+      </div>`:''}
       <div class="fg">
         <label>identifier <span class="hint">只读</span></label>
         <div style="font-family:monospace;background:var(--tint);border:1px solid var(--line);border-radius:8px;padding:8px 10px;font-size:12px">${esc(id)}</div>
@@ -1465,12 +2045,20 @@ function renderDetail(){
         <span class="lbl">启用状态</span>
         <span style="color:${oo&&oo.enabled?'var(--ok)':'var(--faint)'}">${oo&&oo.enabled?'启用中':'停用'} (只读)</span>
       </div>`;
+    // 类型2(ST 保留槽位):名称可改(改成中文名是真实需求);内容/位置/删除仍锁
+    if(pLocked){
+      const nm=$("#edLockName");
+      if(nm)nm.addEventListener("input",ev=>setName(id,ev.target.value));
+      const sv=$("#dSave");
+      if(sv)sv.onclick=()=>commitEdit();
+    }
     return;
   }
 
   /* 渲染编辑面板用 draft;没有 draft(刚进编辑态未改过)就读 prompt 当前值 */
   const p=S.editDraft||P(id);
   const protectedSys=isProtectedSys(p);   // 系统核心(可编辑不可删)
+  const posFixed=isPosFixed(p.identifier); // 类型3:位置模式被酒馆固定为相对
   const br=branchOf(id);
   const role=roleOf(p);
   const pos=parseInt(p.injection_position,10);const posRel=pos!==1;
@@ -1490,8 +2078,11 @@ function renderDetail(){
       <input class="inp" id="edName" value="${esc(p.name||"")}" placeholder="(未命名)">
     </div>
     <div class="fg">
-      <label>内容 <span class="hint">实际注入的提示词文本</span></label>
-      <textarea class="txa" id="edContent" spellcheck="false">${esc(p.content||"")}</textarea>
+      <label>内容 <span class="hint">实际注入的提示词文本 · 蓝块=写变量 绿块=读变量 · 悬停变手型,单击定位变量栏,双击选中宏文本可复制 · 选中变量后,含它的条目打开即加深描边</span></label>
+      <div class="varwrap">
+        <div class="varhl" id="varHl" aria-hidden="true"></div>
+        <textarea class="txa" id="edContent" spellcheck="false">${esc(p.content||"")}</textarea>
+      </div>
     </div>
     <div class="row2">
       <div class="fg">
@@ -1505,15 +2096,14 @@ function renderDetail(){
     </div>
     <div class="fldiv">
       <div class="fg">
-        <label>位置模式 injection_position</label>
+        <label>位置模式 injection_position ${posFixed?'<span class="hint">🔒 酒馆固定,不可改</span>':''}</label>
         <div class="possel" id="edPosSeg">
           <button data-pos="0" class="${posRel?'active':''}">相对 (Relative)</button>
           <button data-pos="1" class="${!posRel?'active':''}">聊天中 (In-chat)</button>
         </div>
-        <div class="depthdesc">
-          <b>相对</b>:条目注入到系统提示层;<b>depth</b> 与 <b>order</b> 由酒馆按顺序自动计算(默认 depth=4, order=100),本工具已锁定不让改。<br>
-          <b>聊天中</b>:条目注入到聊天消息流;<b>depth</b> 控制插在第几条,<b>order</b> 控制同深度内排序,可手动调。
-        </div>
+        <div class="depthdesc">${posFixed
+          ? '<b>🔒 系统核心提示词(主提示词/NSFW/越狱/增强)</b>:位置模式由酒馆固定为<b>相对</b>,depth 与 injection_order 均不可改 —— 名称、角色、内容仍可编辑。'
+          : '<b>相对</b>:条目注入到系统提示层;<b>depth</b> 与 <b>order</b> 由酒馆按顺序自动计算(默认 depth=4, order=100),本工具已锁定不让改。<br><b>聊天中</b>:条目注入到聊天消息流;<b>depth</b> 控制插在第几条,<b>order</b> 控制同深度内排序,可手动调。'}</div>
       </div>
     </div>
     <div class="fldiv" id="edDepthRow">
@@ -1522,7 +2112,7 @@ function renderDetail(){
         <div class="chiprow" id="edDepthChips">
           ${[0,1,2,3,4,5,6].map(d=>`<span class="chip ${depn===d?'active':''}" data-depth="${esc(p.identifier)}" data-v="${d}">${d}</span>`).join("")}
         </div>
-        <div class="depthdesc">${posRel?'此模式 depth 由酒馆自动算(默认 4),不可改':(DEPTH_TIP(depn))}</div>
+        <div class="depthdesc">${posFixed?'🔒 由酒馆固定,不可改':(posRel?'此模式 depth 由酒馆自动算(默认 4),不可改':(DEPTH_TIP(depn)))}</div>
       </div>
     </div>
     <div class="fldiv" id="edInjOrderRow">
@@ -1555,9 +2145,7 @@ function renderDetail(){
       <span class="lbl">${((br?br.order.find(o=>String(o.identifier)===String(id)).enabled:p.enabled)!==false)?'启用':'停用'}</span>
       <span class="hint">关闭=该条不注入</span>
     </div>
-    <div class="fieldnote">
-      ${p.marker?'⚠ 此条是 <b>marker 分隔点</b>,仅作排序标记,通常不改内容。':'<label style="display:flex;align-items:center;gap:6px;cursor:pointer"><input type="checkbox" id="edMarker"> 设为 marker 分隔点(仅排序用)</label>'}
-    </div>
+    ${p.marker?`<div class="fieldnote">⚠ 此条是 <b>marker 分隔点</b>,仅作排序标记,通常不改内容。</div>`:''}
     <div style="display:flex;gap:8px;padding-top:4px">
       <button class="btn" id="edCopy">⧉ 复制此条</button>
       ${protectedSys
@@ -1566,12 +2154,25 @@ function renderDetail(){
     </div>
   `;
 
-  // 锁定/解锁(相对模式下深度order区段)
-  applyPositionLock(body, posRel);
+  // 锁定/解锁(相对模式下深度order区段;posFixed=类型3 连位置切换按钮一起禁)
+  applyPositionLock(body, posRel, posFixed);
 
   // 字段
   $("#edName").addEventListener("input",ev=>setName(p.identifier,ev.target.value));
   $("#edContent").addEventListener("input",ev=>setContent(p.identifier,ev.target.value));
+  // 变量高亮:输入重画色块 / 滚动同步 / 点击反查定位 / 拖拽改尺寸重对齐
+  $("#edContent").addEventListener("input",refreshVarHl);
+  $("#edContent").addEventListener("scroll",()=>{const hl=$("#varHl");if(hl)hl.scrollTop=$("#edContent").scrollTop;});
+  $("#edContent").addEventListener("click",locateVarFromEditor);
+  $("#edContent").addEventListener("dblclick",selectVarForCopy);   // 双击色块=整段宏选中,便于复制
+  $("#edContent").addEventListener("mousemove",edVarHover);   // 悬停变量色块→手型光标
+  $("#edContent").addEventListener("mouseleave",()=>{const t=$("#edContent");if(t)t.classList.remove("varhover");});
+  if(window.ResizeObserver){
+    if(!window._edRO)window._edRO=new ResizeObserver(()=>refreshVarHl());
+    window._edRO.disconnect();window._edRO.observe($("#edContent"));
+  }
+  refreshVarHl();
+  if(S.varSel)selectVarInEditor();   // 变量栏选中状态下打开条目:含该变量则反选首处
   $$("[data-setrole]").forEach(b=>b.addEventListener("click",ev=>setRole(p.identifier,b.dataset.r)));
   $$("[data-pos]").forEach(b=>b.addEventListener("click",ev=>setPosition(p.identifier,b.dataset.pos)));
   $$(".chip[data-depth]").forEach(ch=>ch.addEventListener("click",ev=>setDepth(p.identifier,ch.dataset.v)));
@@ -1580,7 +2181,7 @@ function renderDetail(){
   $("#edUp").addEventListener("click",ev=>{ev.stopPropagation();moveInBranch(p.identifier,-1);});
   $("#edDown").addEventListener("click",ev=>{ev.stopPropagation();moveInBranch(p.identifier,1);});
   $("#edEnable").addEventListener("change",ev=>{ev.stopPropagation();setEnabled(p.identifier,ev.target.checked);});
-  if($("#edMarker")){$("#edMarker").addEventListener("change",ev=>{const pp=P(p.identifier);if(pp){pp.marker=ev.target.checked;}pushHistory("mark");renderDetail();});}
+  // 注:marker 勾选框已移除(用户不应手动设置 marker,marker 由导入的预设结构决定)
   const edDelBtn=$("#edDelete");
   if(edDelBtn)edDelBtn.addEventListener("click",()=>deleteTarget(p.identifier));
   $("#edCopy").addEventListener("click",ev=>{ev.stopPropagation();copyTarget(p.identifier);});
@@ -1639,13 +2240,20 @@ function DEPTH_TIP(d){
   const t=["depth=0:最新一条(最靠后)","depth=1:倒数第二条","depth=2","depth=3","depth=4","depth=5","depth=6:更早消息"];
   return t[Math.max(0,Math.min(6,d))]+" —— 数字越大插得越靠前(早)";
 }
-function applyPositionLock(root,posRel){
+/* fixed=true:类型3(系统核心)——位置模式被酒馆固定,连"相对/聊天中"切换按钮也要禁掉 */
+function applyPositionLock(root,posRel,fixed){
   const chips=root.querySelectorAll(".chip[data-depth]");
-  chips.forEach(c=>{c.style.opacity=posRel?".5":"1";c.style.pointerEvents=posRel?"none":"auto";c.style.cursor=posRel?"not-allowed":"pointer";});
+  const locked=posRel||fixed;
+  chips.forEach(c=>{c.style.opacity=locked?".5":"1";c.style.pointerEvents=locked?"none":"auto";c.style.cursor=locked?"not-allowed":"pointer";});
   const io=root.querySelector("#edInjOrder");
-  if(io){io.disabled=posRel;io.style.opacity=posRel?".6":"1";}
+  if(io){io.disabled=locked;io.style.opacity=locked?".6":"1";}
   const depthChips=root.querySelector("#edDepthChips");
-  if(depthChips){depthChips.parentElement.parentElement.style.opacity=posRel?".55":"1";}
+  if(depthChips){depthChips.parentElement.parentElement.style.opacity=locked?".55":"1";}
+  const seg=root.querySelector("#edPosSeg");
+  if(seg&&fixed){
+    seg.style.opacity=".6";
+    seg.querySelectorAll("button").forEach(b=>{b.disabled=true;b.style.cursor="not-allowed";});
+  }
 }
 
 /* ---------------- 历史(撤销/重做) ---------------- */
@@ -1653,7 +2261,9 @@ const HIST={stack:[],idx:-1},HMAX=60;
 function snapState(){return{
   prompts:S.prompts.map(p=>({...p})),
   branches:S.branches.map(b=>({character_id:b.character_id,isChat:b.isChat,order:b.order.map(o=>({...o}))})),
-  mainCid:S.mainCid,selectedId:S.selectedId,editId:S.editId,
+  mainCid:S.mainCid,
+  // 注意:selectedId/editId(编辑窗口开合与选中)是纯视图状态,不入撤回栈——
+  // 撤回只管数据,不该把用户开着的编辑窗口一并"撤"掉(2026-09-07 蕾卡反馈)
   // 预设元数据(S.preset 的元数据部分;prompts/prompt_order 已有 prompts/branches 覆盖)
   preset:S.preset?JSON.parse(JSON.stringify(S.preset)):null,
   // 多选 UI 状态纳入快照(可跨会话撤销回溯);锚点 idx 用模块级 _anchorIdx 独立记录,不入快照
@@ -1664,7 +2274,14 @@ function pushHistory(){HIST.stack=HIST.stack.slice(0,HIST.idx+1);HIST.stack.push
 function restoreSnap(s){
   S.prompts=s.prompts.map(p=>({...p}));
   S.branches=s.branches.map(b=>({...b,order:b.order.map(o=>({...o}))}));
-  if(s.mainCid)S.mainCid=s.mainCid;S.selectedId=s.selectedId;S.editId=s.editId;
+  if(s.mainCid)S.mainCid=s.mainCid;
+  // 编辑窗口开合/选中不入撤回栈:保留当前 editId,窗口不因撤回被关掉。
+  // 但草稿要同步成恢复后的数据——否则 undo 撤销了内容保存,窗口还显示着被撤掉的旧草稿,再保存=变相 redo
+  if(S.editId){
+    const pp=P(S.editId);
+    if(pp){S.editSnapshot=JSON.parse(JSON.stringify(pp));S.editDraft=JSON.parse(JSON.stringify(pp));S.editDirty=false;}
+    else{S.editId=null;S.editSnapshot=null;S.editDraft=null;S.editDirty=false;}   // 条目已被撤没了(极端),收摊
+  }
   // 还原预设元数据:深拷贝回 S.preset;prompts/branches 等已自己管
   if(s.preset){
     S.preset=JSON.parse(JSON.stringify(s.preset));
@@ -1684,8 +2301,8 @@ function restoreSnap(s){
   if(b){if(s.multiOn){b.textContent="☑ 取消多选";b.classList.add("primary");}else{b.textContent="☑ 多选";b.classList.remove("primary");}}
   refreshMultiBar&&refreshMultiBar();
 }
-function undo(){if(HIST.idx<=0)return;HIST.idx--;restoreSnap(HIST.stack[HIST.idx]);renderList();renderDetail();updateDirty(true);updateBtns();}
-function redo(){if(HIST.idx>=HIST.stack.length-1)return;HIST.idx++;restoreSnap(HIST.stack[HIST.idx]);renderList();renderDetail();updateDirty(true);updateBtns();}
+function undo(){if(HIST.idx<=0)return;const before=branchOrderMap();HIST.idx--;restoreSnap(HIST.stack[HIST.idx]);renderList();renderDetail();updateDirty(true);updateBtns();revealMoved(before);}
+function redo(){if(HIST.idx>=HIST.stack.length-1)return;const before=branchOrderMap();HIST.idx++;restoreSnap(HIST.stack[HIST.idx]);renderList();renderDetail();updateDirty(true);updateBtns();revealMoved(before);}
 function updateBtns(){$("#btnUndo").disabled=HIST.idx<=0;$("#btnRedo").disabled=HIST.idx>=HIST.stack.length-1;}
 
 /* ---------------- 导出 ---------------- */
@@ -1754,6 +2371,43 @@ $("#mbDone").addEventListener("click",finishMulti);   // 完成:保留改动,退
 $$("#mbAllCheck").forEach(el=>el.addEventListener("change",toggleSelectAll));
 $("#btnExport").addEventListener("click",doExport);
 $("#btnTheme").addEventListener("click",toggleTheme);
+$("#vbList").addEventListener("click",()=>setCol("list",$("#leftCol").classList.contains("off")));
+$("#vbVar").addEventListener("click",()=>setCol("var",!$("#varCol").classList.contains("on")));
+// 变量栏事件委托(#varCol 是静态容器,renderVars 只换内层):点行=定位,点排序钮=切换
+$("#varCol").addEventListener("click",ev=>{
+  if(ev.target.closest("#varSort")){S.varSort=(S.varSort==="alpha")?"heat":"alpha";renderVars();return;}
+  const act=ev.target.closest("[data-act]");
+  if(act){   // 抽屉按钮:改名 / 插入宏
+    const item=act.closest(".varitem");
+    if(!item)return;
+    if(act.dataset.act==="ren")renameVar(item.dataset.v,item.querySelector(".vren").value);
+    else if(act.dataset.act==="ins")insertVarMacro(item.dataset.v,act.dataset.k);
+    return;
+  }
+  if(ev.target.closest(".vardrawer"))return;   // 抽屉内其他点击(输入框等)不算选变量
+  const row=ev.target.closest(".varrow");
+  if(!row)return;
+  if(ev.target.closest(".vtw")){   // 箭头:开合抽屉,不动选中
+    S.varOpen=(S.varOpen===row.dataset.v)?null:row.dataset.v;
+    renderVars();
+    return;
+  }
+  S.varSel=(S.varSel===row.dataset.v)?null:row.dataset.v;
+  renderVars();
+  if(S.editId)selectVarInEditor();   // 编辑器开着且当前条目含此变量→立即反选首处
+});
+$("#varCol").addEventListener("keydown",ev=>{   // 改名框回车 = 点改名
+  if(ev.key==="Enter"&&ev.target.classList&&ev.target.classList.contains("vren")){
+    const item=ev.target.closest(".varitem");
+    if(item)renameVar(item.dataset.v,ev.target.value);
+  }
+});
+$("#listbannerBtn").addEventListener("click",()=>toggleSettings());
+if(NARROW_MQ&&NARROW_MQ.addEventListener)NARROW_MQ.addEventListener("change",refreshViewbar);
+window.addEventListener("resize",refreshViewbar);
+bindSplitter("spVar","varCol",150,()=>Math.min(420,(window.innerWidth||1280)-660));
+bindSplitter("spMain","leftCol",300,listMax);
+if(typeof ResizeObserver!=="undefined"){try{new ResizeObserver(applyNarrow).observe($("#leftCol"));}catch(_){}}
 $("#btnAbout").addEventListener("click",()=>{$("#aboutModal").style.display="flex";});
 $("#aboutClose").addEventListener("click",()=>{$("#aboutModal").style.display="none";});
 $("#aboutModal").addEventListener("click",ev=>{if(ev.target.id==="aboutModal")$("#aboutModal").style.display="none";});
@@ -1797,7 +2451,7 @@ window.addEventListener("drop",ev=>{
   }
 });
 
-renderList();renderDetail();resetHistory();
+renderList();renderDetail();resetHistory();refreshViewbar();
 </script>
 </body>
 </html>
