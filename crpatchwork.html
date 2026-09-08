@@ -207,11 +207,22 @@
   .varhead{display:flex;align-items:center;justify-content:space-between;margin:0 2px 8px}
   .varhead .vt{font-size:12px;color:var(--muted)}
   .varhead b{color:var(--fg)}
+  .varhead .vft{color:var(--faint);font-size:10px}
+  #varSearch{flex:1;min-width:0;margin:0 6px;font-size:11px;padding:3px 7px;
+    border:1px solid var(--line);border-radius:6px;background:var(--bg);color:var(--fg)}
+  #varSearch:focus{border-color:var(--acc);outline:none}
+  #varSearch::placeholder{color:var(--faint)}
   #varSort{
     font-size:11px;padding:2px 8px;border:1px solid var(--line);border-radius:6px;
     background:var(--bg);cursor:pointer;color:var(--muted);
   }
   #varSort:hover{color:var(--fg);border-color:var(--acc)}
+  /* 全局替换弹窗输入框 */
+  #replFind,#replWith{padding:6px 10px;border:1px solid var(--line);border-radius:8px;
+    background:var(--bg);color:var(--fg);font-size:12.5px;min-width:0}
+  #replFind:focus,#replWith:focus{outline:none;border-color:var(--acc)}
+  #replGo:disabled{opacity:.45;cursor:not-allowed}
+  #replList b{font-weight:600}
   .varlist{display:flex;flex-direction:column;gap:3px}
   .varrow{
     display:flex;align-items:center;gap:6px;
@@ -245,6 +256,28 @@
   .vdrow input:focus{border-color:var(--acc);outline:none}
   .vdrow button{font-size:11px;padding:3px 8px;border:1px solid var(--line);border-radius:6px;
     background:var(--tint,var(--bg));color:var(--fg);cursor:pointer;white-space:nowrap}
+  /* 抽屉里的「定义于 / 引用于」并排两列:左蓝(定义)右绿(引用),与编辑器色块同色系 */
+  .vdlists{align-items:flex-start}
+  .vdlist{flex:1;min-width:0}
+  .vdlt{display:block;font-size:10px;color:var(--faint);margin-bottom:3px}
+  .vdlist.w .vdlt{color:#3b82f6}
+  .vdlist.r .vdlt{color:#22c55e}
+  .vdli{display:flex;flex-wrap:wrap;gap:3px}
+  /* 注意 .vdli .vj 要压过上面的 .vdrow button(0,1,1),否则胶囊会被抽屉按钮样式盖掉 */
+  .vdli .vj{max-width:100%;font-size:10px;line-height:1.5;padding:1px 5px;border-radius:5px;cursor:pointer;
+    overflow:hidden;text-overflow:ellipsis;white-space:nowrap;
+    border:1px solid var(--line);background:var(--tint,var(--bg));color:var(--fg)}
+  .vdlist.w .vj{border-color:rgba(59,130,246,.45);color:#3b82f6}
+  .vdlist.r .vj{border-color:rgba(34,197,94,.45);color:#22c55e}
+  .vdlist.w .vj:hover{border-color:#3b82f6}
+  .vdlist.r .vj:hover{border-color:#22c55e}
+  .vdlist.w .vj.on{background:rgba(59,130,246,.16)}
+  .vdlist.r .vj.on{background:rgba(34,197,94,.16)}
+  .vdl-none{font-size:10px;color:var(--faint)}
+  html[data-theme="dark"] .vdlist.w .vdlt,html[data-theme="dark"] .vdlist.w .vj{color:#60a5fa}
+  html[data-theme="dark"] .vdlist.r .vdlt,html[data-theme="dark"] .vdlist.r .vj{color:#34d399}
+  /* 定位聚焦的卡片(点抽屉里的条目名):琥珀描边,比 varhit 的选中高亮更醒目,互不混淆 */
+  .card.jump{box-shadow:0 0 0 2px #f59e0b !important}
   .vdrow button:hover{border-color:var(--acc)}
   .varfoot{margin-top:8px;font-size:10.5px;color:var(--muted);padding:0 2px}
   /* 变量定位:选中变量后,含它的条目高亮,其余条目变暗 */
@@ -529,12 +562,14 @@
   <span class="pill" id="fileTag" title="已载入文件" data-page-node-id="vz9D4lsPjBv8zD5fZibi5U">未导入</span>
   <div class="spacer" data-page-node-id="teT3qzbKofIYeciYUOqpOH"></div>
   <label class="btn primary" for="fileOpen" data-page-node-id="HJiQwJAE8Ix5HfsFTlJKHt">📂 打开 JSON</label>
-  <input type="file" id="fileOpen" accept=".json,application/json" data-page-node-id="E1EpMKanzrAHrQb3R8nNYF">
+  <input type="file" id="fileOpen" accept=".json,application/json" hidden data-page-node-id="E1EpMKanzrAHrQb3R8nNYF">
+  <button class="btn" id="btnSample" title="载入内置示例预设，快速看看这工具能做什么（不会改动你自己的文件）" data-page-node-id="sampleBtnPlaceholder">🎁 示例预设</button>
   <button class="btn" id="btnUndo" disabled title="Ctrl+Z" data-page-node-id="WwqUFARlTUKkNSaCxFhffE">↩ 撤销</button>
   <button class="btn" id="btnRedo" disabled title="Ctrl+Y" data-page-node-id="Hd6xPdq2OwUno6xiBltiX6">↪ 重做</button>
   <button class="btn" id="btnMulti" title="进入多选模式">☑ 多选</button>
   <button class="btn" id="btnAddTop" title="新增到当前卡牌分支末尾" data-page-node-id="rqh530tsYcnCemCkFHy3HZ">＋ 新增</button>
   <button class="btn" id="btnPaste" title="粘贴剪贴板里的已复制条目到当前分支末尾" data-page-node-id="rqh530tsYcnCemCkFHy3HZ">📋 粘贴</button>
+  <button class="btn" id="btnReplace" title="全局查找替换：只改可编辑条目的正文内容，不动名称 / 标识符 / 设置 / 保留槽位">🔍 替换</button>
   <button class="btn" id="btnExport" data-page-node-id="dRFfkdGnTHxDj1Mp7kCoYP">⬇ 导出 JSON</button>
   <button class="btn" id="btnTheme" title="切换 日间/夜间 模式" data-page-node-id="dRFfkdGnTHxDj1Mp7kCoYP">🌙</button>
   <button class="btn" id="btnAbout" title="关于 / 免责声明" data-page-node-id="dRFfkdGnTHxDj1Mp7kCoYP">ⓘ</button>
@@ -624,6 +659,27 @@
   </div>
 </div>
 
+<div id="replModal" style="display:none;position:fixed;inset:0;background:rgba(10,14,24,.5);z-index:98;align-items:center;justify-content:center">
+  <div style="background:var(--panel);color:var(--ink);max-width:640px;width:calc(100% - 40px);max-height:80vh;overflow:auto;border:1px solid var(--line);border-radius:14px;padding:20px 22px;box-shadow:0 20px 60px rgba(0,0,0,.35)">
+    <div style="display:flex;align-items:center;gap:8px;margin-bottom:12px">
+      <span style="font-size:15px;font-weight:700">🔍 全局查找替换</span>
+      <div style="flex:1"></div>
+      <button class="btn" id="replClose" style="flex:0 0 auto">✕</button>
+    </div>
+    <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:6px">
+      <input id="replFind" placeholder="查找…" autocomplete="off" spellcheck="false" style="flex:1 1 200px">
+      <input id="replWith" placeholder="替换为…" autocomplete="off" spellcheck="false" style="flex:1 1 200px">
+      <label style="font-size:12px;color:var(--muted);white-space:nowrap;display:flex;gap:4px;align-items:center;cursor:pointer"><input type="checkbox" id="replCase">区分大小写</label>
+    </div>
+    <div id="replMeta" style="font-size:12px;color:var(--muted);margin:6px 0 10px"></div>
+    <div id="replList" style="max-height:38vh;overflow:auto;border:1px solid var(--line);border-radius:10px;padding:8px 10px;font-size:12px;line-height:1.9"></div>
+    <div style="display:flex;gap:10px;margin-top:14px;align-items:center">
+      <div style="flex:1;font-size:11.5px;line-height:1.6;color:var(--faint)">仅替换<b>可编辑条目的正文</b>；名称 / 标识符 / 预设设置 / 保留槽位一律不动。替换前可用 ↩ 撤销。</div>
+      <button class="btn" id="replGo" style="flex:0 0 auto">全部替换</button>
+    </div>
+  </div>
+</div>
+
 <script>
 "use strict";
 /* ============================================================
@@ -655,6 +711,10 @@ let S={
   presetSnapshot:null,   // 打开设置面板时的元数据快照(放弃时还原)
   presetDirty:false,     // 设置面板是否有未保存改动
   varSel:null,           // 变量栏当前选中的变量名(点列表项高亮含它的条目;再点取消)
+  varJump:null,          // 变量抽屉里点条目名后,列表里被定位聚焦的条目 id(再点取消)
+  varFilter:"",          // 变量搜索框的过滤词(纯显示层,不清选中/展开状态)
+  varSearchCaret:null,   // 搜索框光标位置(重渲染后还原)
+  varSearchFocus:false,  // "这次 renderVars 是搜索框触发的"标记,渲染完还焦点
   varSort:"heat",        // 变量列表排序:"heat"=按出现条数降序(默认) | "alpha"=按字母
 };
 const P=id=>S.prompts.find(p=>String(p.identifier)===String(id));
@@ -727,6 +787,331 @@ function branchOf(id){
   return S.branches.find(b=>b.order.some(o=>String(o.identifier)===String(id)));
 }
 
+/* ---------------- 内置示例预设 ---------------- */
+/* 点顶栏「🎁 示例预设」载入的就是这一份。想换内容,只改这个常量即可
+   (结构必须是 ST 预设:prompts 数组 + prompt_order 数组)。
+   当前这份由蕾卡基于 SillyTavern 自带的 Default 预设整理:含 ST 保留槽位(锁定态)、
+   main 受保护层(可编辑不可删)、thinking/content/status 三个变量演示、两个分支。
+   不含任何第三方预设作者的作品。 */
+const SAMPLE_PRESET={
+  "temperature": 1,
+  "frequency_penalty": 0,
+  "presence_penalty": 0,
+  "top_p": 1,
+  "top_k": 0,
+  "top_a": 0,
+  "min_p": 0,
+  "repetition_penalty": 1,
+  "openai_max_context": 4095,
+  "openai_max_tokens": 300,
+  "wrap_in_quotes": false,
+  "names_behavior": 0,
+  "send_if_empty": "",
+  "impersonation_prompt": "[Write your next reply from the point of view of {{user}}, using the chat history so far as a guideline for the writing style of {{user}}. Don't write as {{char}} or system. Don't describe actions of {{char}}.]",
+  "new_chat_prompt": "[Start a new Chat]",
+  "new_group_chat_prompt": "[Start a new group chat. Group members: {{group}}]",
+  "new_example_chat_prompt": "[Example Chat]",
+  "continue_nudge_prompt": "[Continue your last message without repeating its original content.]",
+  "bias_preset_selected": "Default (none)",
+  "max_context_unlocked": false,
+  "wi_format": "{0}",
+  "scenario_format": "{{scenario}}",
+  "personality_format": "{{personality}}",
+  "group_nudge_prompt": "[Write the next reply only as {{char}}.]",
+  "stream_openai": true,
+  "prompts": [
+    {
+      "name": "Main Prompt",
+      "system_prompt": true,
+      "role": "system",
+      "content": "Write {{char}}'s next reply in a fictional chat between {{char}} and {{user}}.",
+      "identifier": "main",
+      "enabled": true
+    },
+    {
+      "name": "Auxiliary Prompt",
+      "system_prompt": true,
+      "role": "system",
+      "content": "",
+      "identifier": "nsfw",
+      "enabled": true
+    },
+    {
+      "identifier": "dialogueExamples",
+      "name": "Chat Examples",
+      "system_prompt": true,
+      "marker": true,
+      "enabled": true
+    },
+    {
+      "name": "Post-History Instructions",
+      "system_prompt": true,
+      "role": "system",
+      "content": "",
+      "identifier": "jailbreak",
+      "enabled": true
+    },
+    {
+      "identifier": "chatHistory",
+      "name": "Chat History",
+      "system_prompt": true,
+      "marker": true,
+      "enabled": true
+    },
+    {
+      "identifier": "worldInfoAfter",
+      "name": "World Info (after)",
+      "system_prompt": true,
+      "marker": true,
+      "enabled": true
+    },
+    {
+      "identifier": "worldInfoBefore",
+      "name": "World Info (before)",
+      "system_prompt": true,
+      "marker": true,
+      "enabled": true
+    },
+    {
+      "identifier": "enhanceDefinitions",
+      "role": "system",
+      "name": "Enhance Definitions",
+      "content": "If you have more knowledge of {{char}}, add to the character's lore and personality to enhance them but keep the Character Sheet's definitions absolute.",
+      "system_prompt": true,
+      "marker": false,
+      "enabled": false
+    },
+    {
+      "identifier": "charDescription",
+      "name": "Char Description",
+      "system_prompt": true,
+      "marker": true,
+      "enabled": true
+    },
+    {
+      "identifier": "charPersonality",
+      "name": "Char Personality",
+      "system_prompt": true,
+      "marker": true,
+      "enabled": true
+    },
+    {
+      "identifier": "scenario",
+      "name": "Scenario",
+      "system_prompt": true,
+      "marker": true,
+      "enabled": true
+    },
+    {
+      "identifier": "personaDescription",
+      "name": "Persona Description",
+      "system_prompt": true,
+      "marker": true,
+      "enabled": true
+    },
+    {
+      "identifier": "copied-1",
+      "system_prompt": false,
+      "enabled": true,
+      "marker": false,
+      "name": "变量注入前置",
+      "role": "system",
+      "content": "{{setvar::thinking::<thinking>}}\n{{setvar::content::<content>}}\n{{setvar::status:: }}\n\n",
+      "injection_position": 0,
+      "injection_depth": 4,
+      "injection_order": 100,
+      "forbid_overrides": false
+    },
+    {
+      "identifier": "copied-2",
+      "system_prompt": false,
+      "enabled": true,
+      "marker": false,
+      "name": "输出格式引用变量",
+      "role": "system",
+      "content": "<输出格式>\n# 输出格式如下例，所有内容顶格生成：\n{{getvar::thinking}}\n{{getvar::content}}\n{{getvar::status}}\n</输出格式>",
+      "injection_position": 0,
+      "injection_depth": 4,
+      "injection_order": 100,
+      "injection_trigger": [],
+      "forbid_overrides": false
+    },
+    {
+      "identifier": "copied-3",
+      "system_prompt": false,
+      "enabled": true,
+      "marker": false,
+      "name": "状态栏示例",
+      "role": "system",
+      "content": "{{setvar::status::\n正文输出结束后，根据以下要求生成状态栏}}\n\n<state_bar>\n### 全局信息\n时间：[事件发生的时间，具体到年月日星期和时分，例如：帝国历1024年9月14日 星期二，16:50-17:00]\n地点：[事件发生的具体地点，例如：黑猫酒馆、废弃码头]\n事件：[对本轮摘要内容的概括性小标题，例如：初次接触、线索浮现等]\n\n### 角色信息\n角色名：{{角色姓名}}\n-着装：{{角色着装}}\n-当前姿势：{{角色当前姿势}}\n-身体状态：{{角色身体状态}}\n-内心独白：{{角色内心独白}}\n\n### 玩家信息\n角色名：{{玩家姓名}}\n-着装：{{玩家着装}}\n-当前姿势：{{玩家当前姿势}}\n-身体状态：{{玩家身体状态}}\n</state_bar>\n",
+      "injection_position": 0,
+      "injection_depth": 4,
+      "injection_order": 100,
+      "forbid_overrides": false
+    },
+    {
+      "identifier": "copied-4",
+      "system_prompt": false,
+      "enabled": true,
+      "marker": false,
+      "name": "故障极其人",
+      "role": "system",
+      "content": "<**禁止事项**>\n/**WARNING:正文生成禁止出现词语‘极其’‘有些’**/\n/**WARNING:禁止高频重复词句**/",
+      "injection_position": 1,
+      "injection_depth": 1,
+      "injection_order": 100,
+      "forbid_overrides": false
+    },
+    {
+      "identifier": "copied-5",
+      "system_prompt": false,
+      "enabled": true,
+      "marker": false,
+      "name": "输出",
+      "role": "user",
+      "content": "请开始按以上要求输出",
+      "injection_position": 0,
+      "injection_depth": 4,
+      "injection_order": 100,
+      "forbid_overrides": false
+    }
+  ],
+  "prompt_order": [
+    {
+      "character_id": 100000,
+      "order": [
+        {
+          "identifier": "main",
+          "enabled": true
+        },
+        {
+          "identifier": "worldInfoBefore",
+          "enabled": true
+        },
+        {
+          "identifier": "charDescription",
+          "enabled": true
+        },
+        {
+          "identifier": "charPersonality",
+          "enabled": true
+        },
+        {
+          "identifier": "scenario",
+          "enabled": true
+        },
+        {
+          "identifier": "enhanceDefinitions",
+          "enabled": false
+        },
+        {
+          "identifier": "nsfw",
+          "enabled": true
+        },
+        {
+          "identifier": "worldInfoAfter",
+          "enabled": true
+        },
+        {
+          "identifier": "dialogueExamples",
+          "enabled": true
+        },
+        {
+          "identifier": "chatHistory",
+          "enabled": true
+        },
+        {
+          "identifier": "jailbreak",
+          "enabled": true
+        }
+      ]
+    },
+    {
+      "character_id": 100001,
+      "order": [
+        {
+          "identifier": "copied-1",
+          "enabled": true
+        },
+        {
+          "identifier": "main",
+          "enabled": true
+        },
+        {
+          "identifier": "worldInfoBefore",
+          "enabled": true
+        },
+        {
+          "identifier": "personaDescription",
+          "enabled": true
+        },
+        {
+          "identifier": "charDescription",
+          "enabled": true
+        },
+        {
+          "identifier": "charPersonality",
+          "enabled": true
+        },
+        {
+          "identifier": "scenario",
+          "enabled": true
+        },
+        {
+          "identifier": "enhanceDefinitions",
+          "enabled": false
+        },
+        {
+          "identifier": "nsfw",
+          "enabled": true
+        },
+        {
+          "identifier": "worldInfoAfter",
+          "enabled": true
+        },
+        {
+          "identifier": "dialogueExamples",
+          "enabled": true
+        },
+        {
+          "identifier": "chatHistory",
+          "enabled": true
+        },
+        {
+          "identifier": "jailbreak",
+          "enabled": true
+        },
+        {
+          "identifier": "copied-3",
+          "enabled": true
+        },
+        {
+          "identifier": "copied-4",
+          "enabled": true
+        },
+        {
+          "identifier": "copied-2",
+          "enabled": true
+        },
+        {
+          "identifier": "copied-5",
+          "enabled": true
+        }
+      ]
+    }
+  ],
+  "assistant_prefill": "",
+  "assistant_impersonation": "",
+  "claude_use_sysprompt": false,
+  "squash_system_messages": false,
+  "image_inlining": false,
+  "continue_prefill": false,
+  "continue_postfix": " ",
+  "seed": -1,
+  "n": 1,
+  "name": "预设示例"
+};
+
 /* ---------------- 导入 ---------------- */
 function importJson(text,fileName){
   let d;try{d=JSON.parse(text);}catch{toast("❌ 不是有效 JSON");return;}
@@ -735,6 +1120,8 @@ function importJson(text,fileName){
   S.prompts=d.prompts.map(p=>({...p}));
   S.fileName=fileName||"preset.json";
   S.selectedId=null; S.editId=null;
+  S.varJump=null;   // 换预设时清掉变量抽屉的定位态,免得指向旧预设的条目
+  S.varFilter="";   // 搜索词同理:新预设从干净列表开始
   S.editSnapshot=null; S.editDirty=false; S.editDraft=null;   // 新预设:清掉上一次的编辑会话状态
   let poArr=d.prompt_order;
   if(!poArr.length)poArr=[{character_id:CHAT_CID,order:[]}];
@@ -1144,11 +1531,11 @@ function closeSettings(force){
 function commitSettings(){
   if(!S.settingsOpen||!S.presetDraft)return;
   if(!hasSettingsChanges()){toast("没有改动,无需保存");return;}
-  pushHistory("settings");
   // 把 draft 里元数据字段写回 S.preset(prompts/prompt_order 不动,已经各自管理)
   for(const[k,,,min,max] of SETTINGS_FIELDS){
     if(S.presetDraft[k]!==undefined)S.preset[k]=S.presetDraft[k];
   }
+  pushHistory("settings");   // 全站约定:压栈在改动后(存改动后状态)。原先压在改动前,连续两次保存设置后 undo 会跳过第一次的状态
   S.presetSnapshot=JSON.parse(JSON.stringify(S.preset));
   S.presetDraft=JSON.parse(JSON.stringify(S.preset));
   S.presetDirty=false;
@@ -1678,8 +2065,10 @@ function scanVars(){
     if(!refs.length)continue;
     for(const r of refs){
       let e=map.get(r.name);
-      if(!e){e={name:r.name,entries:new Set(),reads:0,writes:0};map.set(r.name,e);}
-      e.entries.add(p.identifier);r.write?e.writes++:e.reads++;
+      if(!e){e={name:r.name,entries:new Set(),wEntries:new Set(),rEntries:new Set(),reads:0,writes:0};map.set(r.name,e);}
+      e.entries.add(p.identifier);
+      (r.write?e.wEntries:e.rEntries).add(p.identifier);   // 分开记:抽屉里要按 定义于/引用于 两列展示
+      r.write?e.writes++:e.reads++;
     }
   }
   return [...map.values()];
@@ -1692,15 +2081,26 @@ function renderVars(){
     vc.innerHTML=`<div class="varPh">变量面板<span style="display:block;font-size:11px;color:var(--faint);margin-top:6px">导入预设后自动扫描 {{变量}}</span></div>`;
     return;
   }
-  const vars=scanVars();
-  if(S.varSel&&!vars.some(v=>v.name===S.varSel))S.varSel=null;   // 选中的变量随编辑消失了→取消选中
+  const all=scanVars();
+  if(S.varSel&&!all.some(v=>v.name===S.varSel))S.varSel=null;   // 选中的变量随编辑消失了→取消选中(按全量判,搜索过滤不抢这个活)
   const heat=S.varSort!=="alpha";
-  vars.sort(heat
+  /* 抽屉里「定义于 / 引用于」两列用的小工具:取条目名,并把 id 集合渲染成可点击的小胶囊 */
+  const nmOf=id=>{const p=P(id);return p?((p.name&&String(p.name).trim())||String(p.identifier)):String(id);};
+  const chips=set=>{
+    const ids=[...set];
+    if(!ids.length)return `<span class="vdl-none">—</span>`;
+    return ids.map(id=>`<button class="vj${S.varJump===id?" on":""}" data-act="jump" data-pid="${esc(id)}" title="定位到条目「${esc(nmOf(id))}」(再点取消)">${esc(nmOf(id))}</button>`).join("");
+  };
+  all.sort(heat
     ?(a,b)=>(b.entries.size-a.entries.size)||a.name.localeCompare(b.name)
     :(a,b)=>a.name.localeCompare(b.name));
-  let h=`<div class="varhead"><span class="vt">变量 <b>${vars.length}</b></span><button id="varSort" title="${heat?'当前按热度排序,点击改为按字母':'当前按字母排序,点击改为按热度'}">${heat?"🔥":"🔤"}</button></div>`;
-  if(!vars.length){
+  const kw=(S.varFilter||"").trim().toLowerCase();
+  const vars=kw?all.filter(v=>v.name.toLowerCase().includes(kw)):all;   // 搜索框是纯显示层过滤,不改选中/展开状态
+  let h=`<div class="varhead"><span class="vt">变量 <b>${vars.length}</b>${kw?`<span class="vft">/${all.length}</span>`:""}</span><input id="varSearch" placeholder="搜变量…" spellcheck="false" value="${esc(S.varFilter||"")}" title="按变量名过滤,Esc 清空"><button id="varSort" title="${heat?'当前按热度排序,点击改为按字母':'当前按字母排序,点击改为按热度'}">${heat?"🔥":"🔤"}</button></div>`;
+  if(!all.length){
     h+=`<div class="varPh">未发现变量宏<br><span style="font-size:11px;color:var(--faint)">支持 getvar / setvar / addvar<br>/ getglobalvar / setglobalvar</span></div>`;
+  }else if(!vars.length){
+    h+=`<div class="varPh">没有匹配「${esc((S.varFilter||"").trim())}」的变量<br><span style="font-size:11px;color:var(--faint)">Esc 清空搜索框</span></div>`;
   }else{
     h+=`<div class="varlist">`;
     for(const v of vars){
@@ -1715,6 +2115,10 @@ function renderVars(){
           </span>
         </div>
         <div class="vardrawer">
+          <div class="vdrow vdlists">
+            <div class="vdlist w"><span class="vdlt">定义于</span><span class="vdli">${chips(v.wEntries)}</span></div>
+            <div class="vdlist r"><span class="vdlt">引用于</span><span class="vdli">${chips(v.rEntries)}</span></div>
+          </div>
           <div class="vdrow">
             <input class="vren" value="${esc(v.name)}" spellcheck="false" title="改成新名字,整份预设批量替换">
             <button data-act="ren" title="把整份预设里此变量的名字批量替换为新名字">改名</button>
@@ -1731,12 +2135,38 @@ function renderVars(){
   }
   vc.innerHTML=h;
   col.classList.toggle("varfilter",!!S.varSel);
-  $$(".card").forEach(c=>c.classList.remove("varhit"));
+  $$(".card").forEach(c=>c.classList.remove("varhit","jump"));
   if(S.varSel){
     $$(".card").forEach(c=>{
       const p=P(c.dataset.pid);
       if(p&&promptVarRefs(p).some(r=>r.name===S.varSel))c.classList.add("varhit");
     });
+  }
+  if(S.varJump){
+    const jc=[...$$(".card")].find(c=>c.dataset.pid===S.varJump);
+    if(jc)jc.classList.add("jump");
+    else S.varJump=null;   // 条目已不在(删了/换预设),定位态自动失效
+  }
+  /* 搜索框触发重渲染后,把焦点和光标还给输入框(整块 innerHTML 重建会丢焦点) */
+  const vs=$("#varSearch");
+  if(vs&&S.varSearchFocus){
+    vs.focus();
+    if(S.varSearchCaret!=null)try{vs.setSelectionRange(S.varSearchCaret,S.varSearchCaret);}catch(_){}
+  }
+  S.varSearchFocus=false;
+}
+/* 变量抽屉点条目名:列表滚动定位到该卡片(高亮类 .jump 由 renderVars 按 S.varJump 统一加)。
+   条目不在当前分支时,自动切到含它的分支再定位。 */
+function jumpToCard(pid){
+  let card=[...$$(".card")].find(c=>c.dataset.pid===pid);
+  if(!card){
+    const br=S.branches.find(b=>b.order.some(o=>o.identifier===pid));
+    if(br){S.mainCid=br.character_id;renderList();card=[...$$(".card")].find(c=>c.dataset.pid===pid);}
+  }
+  if(!card){toast("该条目不在列表里");return;}
+  if(typeof card.scrollIntoView==="function"){
+    try{card.scrollIntoView({block:"center",behavior:"smooth"});}
+    catch(_){try{card.scrollIntoView();}catch(_2){}}
   }
 }
 
@@ -2377,6 +2807,10 @@ function toggleTheme(){
 
 /* ---------------- 全局事件 ---------------- */
 $("#fileOpen").addEventListener("change",ev=>{const f=ev.target.files[0];if(f){openFile(f);ev.target.value="";}});
+$("#btnSample").addEventListener("click",()=>{
+  if(S.preset&&!confirm("载入示例会替换编辑器里当前的内容，继续？"))return;
+  importJson(JSON.stringify(SAMPLE_PRESET),"示例预设.json");
+});
 $("#btnUndo").addEventListener("click",undo);
 $("#btnRedo").addEventListener("click",redo);
 $("#btnPaste").addEventListener("click",pasteFromClipboard);
@@ -2399,11 +2833,17 @@ $("#varCol").addEventListener("mousedown",ev=>{   // 工具栏经典手法:按�
 $("#varCol").addEventListener("click",ev=>{
   if(ev.target.closest("#varSort")){S.varSort=(S.varSort==="alpha")?"heat":"alpha";renderVars();return;}
   const act=ev.target.closest("[data-act]");
-  if(act){   // 抽屉按钮:改名 / 插入宏
+  if(act){   // 抽屉按钮:改名 / 插入宏 / 定位条目
     const item=act.closest(".varitem");
     if(!item)return;
     if(act.dataset.act==="ren")renameVar(item.dataset.v,item.querySelector(".vren").value);
     else if(act.dataset.act==="ins")insertVarMacro(item.dataset.v,act.dataset.k);
+    else if(act.dataset.act==="jump"){
+      const pid=act.dataset.pid;
+      S.varJump=(S.varJump===pid)?null:pid;   // 再点同一个条目名 = 取消定位
+      if(S.varJump)jumpToCard(S.varJump);     // 先定位:可能切分支,renderList→renderVars 会把 .jump 加上
+      renderVars();                            // 再刷新抽屉(on 态/取消态);注意顺序,若先 renderVars 会因"当前分支没这张卡"把 varJump 误清
+    }
     return;
   }
   if(ev.target.closest(".vardrawer"))return;   // 抽屉内其他点击(输入框等)不算选变量
@@ -2424,6 +2864,18 @@ $("#varCol").addEventListener("keydown",ev=>{   // 改名框回车 = 点改名
     if(item)renameVar(item.dataset.v,ev.target.value);
   }
 });
+$("#varCol").addEventListener("input",ev=>{   // 变量搜索框:边输入边过滤
+  if(ev.target.id!=="varSearch")return;
+  S.varFilter=ev.target.value;
+  S.varSearchCaret=ev.target.selectionStart;
+  S.varSearchFocus=true;   // renderVars 重建 DOM,渲染完把焦点和光标还回来
+  renderVars();
+});
+$("#varCol").addEventListener("keydown",ev=>{   // 搜索框 Esc = 清空过滤
+  if(ev.target.id==="varSearch"&&ev.key==="Escape"){
+    S.varFilter="";S.varSearchCaret=0;S.varSearchFocus=true;renderVars();
+  }
+});
 $("#listbannerBtn").addEventListener("click",()=>toggleSettings());
 if(NARROW_MQ&&NARROW_MQ.addEventListener)NARROW_MQ.addEventListener("change",refreshViewbar);
 window.addEventListener("resize",refreshViewbar);
@@ -2433,6 +2885,85 @@ if(typeof ResizeObserver!=="undefined"){try{new ResizeObserver(applyNarrow).obse
 $("#btnAbout").addEventListener("click",()=>{$("#aboutModal").style.display="flex";});
 $("#aboutClose").addEventListener("click",()=>{$("#aboutModal").style.display="none";});
 $("#aboutModal").addEventListener("click",ev=>{if(ev.target.id==="aboutModal")$("#aboutModal").style.display="none";});
+
+/* ---------------- 全局查找替换 ----------------
+   只动可编辑条目的 content 字段:保留槽位(isStReserved)/锚点(lockedSet)一律跳过,
+   system_prompt 受保护核心条目内容本就可编辑,故也在范围内(与文本框权限一致)。
+   name / identifier / role / prompt_order / 预设设置全都不碰。 */
+const escapeRe=s=>String(s).replace(/[.*+?^${}()|[\]\\]/g,"\\$&");
+let replOpen=false;
+function replTargets(){
+  return S.prompts.filter(p=>p&&!isStReserved(p)&&!S.lockedSet.has(String(p.identifier)));
+}
+function renderReplPreview(){
+  const q=$("#replFind").value,cs=$("#replCase").checked;
+  const meta=$("#replMeta"),list=$("#replList"),go=$("#replGo");
+  if(!q){
+    meta.textContent="输入要查找的内容,下方实时预览将受影响的条目。";
+    list.innerHTML='<span style="color:var(--faint)">—</span>';
+    go.disabled=true;return;
+  }
+  const re=new RegExp(escapeRe(q),cs?"g":"gi");
+  const rows=[];let total=0;
+  for(const p of replTargets()){
+    const m=String(p.content==null?"":p.content).match(re);
+    if(!m)continue;
+    total+=m.length;rows.push({p,n:m.length});
+  }
+  go.disabled=!total;
+  if(!total){
+    meta.textContent=`没有可编辑条目包含「${q}」${cs?"(区分大小写)":"(忽略大小写)"}`;
+    list.innerHTML='<span style="color:var(--faint)">—</span>';return;
+  }
+  meta.innerHTML=`将影响 <b style="color:var(--acc)">${rows.length}</b> 个条目 · 共 <b style="color:var(--acc)">${total}</b> 处`;
+  list.innerHTML=rows.map(({p,n})=>
+    `<div style="display:flex;gap:8px;align-items:baseline;min-width:0">
+      <span style="flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${esc(guessName(p))}">${esc(guessName(p))}</span>
+      <span style="color:var(--faint);font-size:11px;flex:0 0 auto">${esc(p.role||"system")}</span>
+      <span style="color:var(--acc);white-space:nowrap;flex:0 0 auto">×${n}</span>
+    </div>`).join("");
+}
+function doReplaceAll(){
+  const q=$("#replFind").value,r=$("#replWith").value,cs=$("#replCase").checked;
+  if(!q){toast("先输入要查找的内容");return;}
+  const re=new RegExp(escapeRe(q),cs?"g":"gi");
+  // 先数清楚要改多少,一处都没有就不进撤销栈(空操作别污染历史)
+  let n=0,cnt=0;const hits=[];
+  for(const p of replTargets()){
+    const s=String(p.content==null?"":p.content);
+    const m=s.match(re);
+    if(!m)continue;
+    n+=m.length;cnt++;hits.push({p,s});
+  }
+  if(!n){toast("没有可替换的内容");return;}
+  for(const {p,s} of hits)p.content=s.replace(re,()=>r);   // 函数替换:替换文本里的 $& 等不会展开
+  pushHistory("replace");   // 全站约定:快照存"改动后"状态(undo 退到上一个快照),必须压在改动之后——
+                            // 压在前面的快照会和栈里已有状态重复,连续两次替换后 undo 会跳过中间态(2026-09-08 蕾卡实测)
+  // 编辑窗口若开着,草稿同步成替换后的内容——否则窗口里的旧文一保存就把替换盖回去了
+  if(S.editId){
+    const pp=P(S.editId);
+    if(pp){S.editSnapshot=JSON.parse(JSON.stringify(pp));S.editDraft=JSON.parse(JSON.stringify(pp));S.editDirty=false;}
+  }
+  closeRepl();
+  renderList();renderVars();renderDetail();updateDirty(true);
+  toast(`已替换 ${n} 处(${cnt} 个条目),可 ↩ 撤销`);
+}
+function openRepl(){
+  if(!S.preset){toast("先导入一个预设");return;}
+  replOpen=true;$("#replModal").style.display="flex";
+  $("#replFind").value="";$("#replWith").value="";$("#replCase").checked=false;
+  renderReplPreview();
+  setTimeout(()=>{try{$("#replFind").focus();}catch(_){}},0);
+}
+function closeRepl(){replOpen=false;$("#replModal").style.display="none";}
+$("#btnReplace").addEventListener("click",openRepl);
+$("#replClose").addEventListener("click",closeRepl);
+$("#replModal").addEventListener("click",ev=>{if(ev.target.id==="replModal")closeRepl();});
+$("#replFind").addEventListener("input",renderReplPreview);
+$("#replCase").addEventListener("change",renderReplPreview);
+$("#replFind").addEventListener("keydown",ev=>{if(ev.key==="Enter"){ev.preventDefault();$("#replWith").focus();}});
+$("#replWith").addEventListener("keydown",ev=>{if(ev.key==="Enter"){ev.preventDefault();doReplaceAll();}});
+$("#replGo").addEventListener("click",doReplaceAll);
 $("#dirtyBarClose").addEventListener("click",()=>{Dirty.closed=true;$("#dirtyBar").classList.remove("show");});
 document.addEventListener("keydown",ev=>{
   const t=document.activeElement&&document.activeElement.tagName;
@@ -2443,6 +2974,8 @@ document.addEventListener("keydown",ev=>{
     if(inI)ev.preventDefault();   // 编辑框内也要拦下,免得弹保存网页
     doExport();
   } else if(ev.key==="Escape"){
+    if(replOpen){closeRepl();return;}      // 替换弹窗开着时 Esc 只关弹窗,别连带清选中
+    if(ev.target.id==="varSearch")return;   // 变量搜索框自己消化 Esc(清过滤+还焦点),别连带清选中/重建列表把焦点抽走
     // 设置面板打开时优先关设置,其次编辑
     if(S.settingsOpen)closeSettings();
     else if(S.editId)closeEdit();
