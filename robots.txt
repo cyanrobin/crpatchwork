@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://cyanrobin.github.io/crpatchwork/sitemap.xml

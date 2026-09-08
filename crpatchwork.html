@@ -4,6 +4,7 @@
 <meta charset="UTF-8" data-page-node-id="crinWVUPqAB02cSFEp8UUG">
 <meta name="viewport" content="width=device-width, initial-scale=1.0" data-page-node-id="JD39f4t0jdTU90HlBlCo2y">
 <title>ST 预设编辑器 · crpatchwork</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20viewBox='0%200%2064%2064'%3E%3Cdefs%3E%3ClinearGradient%20id='g'%20x1='0'%20y1='0'%20x2='1'%20y2='1'%3E%3Cstop%20offset='0'%20stop-color='%23a78bfa'/%3E%3Cstop%20offset='1'%20stop-color='%2334d399'/%3E%3C/linearGradient%3E%3C/defs%3E%3Crect%20width='64'%20height='64'%20rx='14'%20fill='url(%23g)'/%3E%3Ctext%20x='32'%20y='45'%20font-size='34'%20text-anchor='middle'%3E%F0%9F%90%A6%3C/text%3E%3C/svg%3E">
 <meta name="description" content="crpatchwork —— SillyTavern (ST) 预设 JSON 可视化编辑器：整理 prompts / order / 分支结构，拖拽排序、启停切换、批量复制粘贴、多选管理、一键导出。纯本地运行，数据不出浏览器。">
 <meta name="keywords" content="SillyTavern 预设编辑器,ST 预设,酒馆预设,世界书编辑,preset editor,World Info,JSON 可视化,SillyTavern 工具">
 <style>
@@ -104,7 +105,14 @@
     flex:0 0 auto;
   }
   header h1{font-size:15px; margin:0; font-weight:700; display:flex; align-items:center; gap:8px}
-  header h1 .dot{width:9px;height:9px;border-radius:50%;background:var(--acc)}
+  /* 品牌标记:与落地页同款(紫绿渐变圆角方块 + 🐦),纯 CSS 无图片文件;顶栏用 20px 小号版 */
+  header h1 .logo{
+    width:20px; height:20px; border-radius:6px; flex:0 0 auto;
+    background:linear-gradient(135deg,#a78bfa,#34d399);
+    display:inline-flex; align-items:center; justify-content:center;
+    font-size:12px; line-height:1; user-select:none;
+    box-shadow:0 1px 2px rgba(20,23,31,.18);
+  }
   .spacer{flex:1}
   .btn{
     border:1px solid var(--line); background:#fff; color:var(--ink);
@@ -429,6 +437,12 @@
      textarea 的文字保持正常显示(镜像层文字透明),滚动/输入/改尺寸三路同步。 */
   .varwrap{position:relative}
   .varwrap .txa{position:relative; z-index:2; background:transparent}
+  /* 夜间补丁:上面这条权重只有 (0,2,0),压不过 html[data-theme="dark"] .txa 的 (0,2,1),
+     深色不透明底会盖住背后镜像层 —— 表现就是"夜间模式变量色块消失"。
+     这里套同样的 html[data-theme] 前缀把权重抬到 (0,3,1) 强制透明,:focus 同理(对应上面 L52 的聚焦规则)。
+     验这条别用 jsdom 的 getComputedStyle:它不计算权重、只按源码顺序取最后一条,会给出假绿灯。 */
+  html[data-theme="dark"] .varwrap .txa,
+  html[data-theme="dark"] .varwrap .txa:focus{background:transparent}
   .varhl{
     position:absolute; z-index:1; overflow:hidden; border-radius:8px;
     color:transparent; pointer-events:none; user-select:none;
@@ -441,6 +455,11 @@
   /* 变量栏选中某变量后,编辑器里所有同名宏色块加深描边(buildVarHl 按 S.varSel 附加 .vhl-on) */
   .varhl .vhl-w.vhl-on{background:rgba(59,130,246,.38); box-shadow:inset 0 0 0 2px rgba(59,130,246,.8)}
   .varhl .vhl-r.vhl-on{background:rgba(34,197,94,.34); box-shadow:inset 0 0 0 2px rgba(22,163,74,.8)}
+  /* 夜间:22% 的半透明叠在深色面板上会糊掉(浅底上 22% 很清楚,深底上就发闷),整体提一档亮度与描边 */
+  html[data-theme="dark"] .varhl .vhl-w{background:rgba(96,165,250,.30); box-shadow:inset 0 0 0 1px rgba(96,165,250,.55)}
+  html[data-theme="dark"] .varhl .vhl-r{background:rgba(52,211,153,.26); box-shadow:inset 0 0 0 1px rgba(52,211,153,.55)}
+  html[data-theme="dark"] .varhl .vhl-w.vhl-on{background:rgba(96,165,250,.46); box-shadow:inset 0 0 0 2px rgba(147,197,253,.9)}
+  html[data-theme="dark"] .varhl .vhl-r.vhl-on{background:rgba(52,211,153,.42); box-shadow:inset 0 0 0 2px rgba(110,231,183,.9)}
   /* 悬停命中变量色块时 textarea 换手型(色块画在镜像层拿不到 hover,由 JS 探测后加类) */
   .varwrap .txa.varhover{cursor:pointer}
   .row2{display:flex; gap:14px; flex-wrap:wrap}
@@ -506,7 +525,7 @@
 <body data-page-node-id="gFAUUsv3vfdHSBGXDNItSF">
 
 <header data-page-node-id="hxycRFRs5DfEBFYsFXxpx6">
-  <h1 data-page-node-id="D0xdlja3HD040psG6HDHG9"><span class="dot" data-page-node-id="MGKtnRo6QI6oArAt4CjtDK"></span>ST 预设编辑器 <span style="font-size:11px;font-weight:400;color:var(--faint)">· crpatchwork</span></h1>
+  <h1 data-page-node-id="D0xdlja3HD040psG6HDHG9"><span class="logo" data-page-node-id="MGKtnRo6QI6oArAt4CjtDK">🐦</span>ST 预设编辑器 <span style="font-size:11px;font-weight:400;color:var(--faint)">· crpatchwork</span></h1>
   <span class="pill" id="fileTag" title="已载入文件" data-page-node-id="vz9D4lsPjBv8zD5fZibi5U">未导入</span>
   <div class="spacer" data-page-node-id="teT3qzbKofIYeciYUOqpOH"></div>
   <label class="btn primary" for="fileOpen" data-page-node-id="HJiQwJAE8Ix5HfsFTlJKHt">📂 打开 JSON</label>

@@ -1,13 +1,169 @@
 <!DOCTYPE html>
 <html lang="zh-CN">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta http-equiv="refresh" content="0; url=crpatchwork.html">
-  <title>crpatchwork · ST 预设拼布工坊</title>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>ST 预设编辑器 · crpatchwork — 免费在线 SillyTavern 预设可视化工具</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20viewBox='0%200%2064%2064'%3E%3Cdefs%3E%3ClinearGradient%20id='g'%20x1='0'%20y1='0'%20x2='1'%20y2='1'%3E%3Cstop%20offset='0'%20stop-color='%23a78bfa'/%3E%3Cstop%20offset='1'%20stop-color='%2334d399'/%3E%3C/linearGradient%3E%3C/defs%3E%3Crect%20width='64'%20height='64'%20rx='14'%20fill='url(%23g)'/%3E%3Ctext%20x='32'%20y='45'%20font-size='34'%20text-anchor='middle'%3E%F0%9F%90%A6%3C/text%3E%3C/svg%3E">
+<meta name="description" content="crpatchwork 是免费开源的 ST（SillyTavern / 酒馆）预设可视化编辑器：拖拽卡片整理提示词顺序、锁定酒馆槽位、变量面板一键定位 setvar/getvar、跨标签页复制粘贴、导出 JSON 原样保留其余字段。纯本地运行，数据不出浏览器，免安装免注册。">
+<meta name="keywords" content="ST 预设编辑器,SillyTavern 预设编辑器,酒馆预设编辑器,酒馆预设,SillyTavern 预设,preset editor,提示词编辑器,preset JSON,可视化编辑器,拖拽排序">
+<meta property="og:title" content="ST 预设编辑器 · crpatchwork">
+<meta property="og:description" content="一团乱麻的酒馆预设，拖一拖就清晰了。免费开源、纯本地运行的 SillyTavern 预设可视化编辑器。">
+<meta property="og:type" content="website">
+<meta property="og:url" content="https://cyanrobin.github.io/crpatchwork/">
+<meta property="og:image" content="https://cyanrobin.github.io/crpatchwork/assets/main_ui.png">
+<link rel="canonical" href="https://cyanrobin.github.io/crpatchwork/">
+<style>
+  * { margin:0; padding:0; box-sizing:border-box; }
+  :root { --acc:#7c5ce0; --acc2:#34d399; --ink:#2d2740; --sub:#5b5470; --line:#e6e1f0; }
+  html { scroll-behavior:smooth; }
+  body { font-family:-apple-system,"PingFang SC","Microsoft YaHei",sans-serif; color:var(--ink);
+    background:linear-gradient(160deg,#efe9f7 0%,#e6f0f1 55%,#f3eaf7 100%); line-height:1.7; }
+  .wrap { max-width:1000px; margin:0 auto; padding:0 24px; }
+
+  /* 品牌 */
+  .brandmark { width:44px; height:44px; border-radius:13px;
+    background:linear-gradient(135deg,#a78bfa 0%,#34d399 100%);
+    display:inline-flex; align-items:center; justify-content:center; font-size:24px; vertical-align:middle; }
+  header { padding:22px 0; }
+  header .wrap { display:flex; align-items:center; gap:12px; }
+  header .name { font-size:19px; font-weight:700; }
+  header .name small { font-weight:500; color:var(--sub); }
+  header .gh { margin-left:auto; font-size:14px; }
+  header a { color:var(--ink); text-decoration:none; }
+  header .gh a { color:var(--acc); font-weight:600; }
+
+  /* Hero */
+  .hero { text-align:center; padding:64px 0 40px; }
+  .hero h1 { font-size:clamp(34px,6vw,58px); font-weight:800; letter-spacing:-1px; line-height:1.15; }
+  .hero h1 .accent { color:var(--acc); }
+  .hero p.sub { margin-top:18px; font-size:clamp(16px,2.4vw,20px); color:var(--sub); }
+  .hero p.sub strong { color:var(--acc); }
+  .cta { margin-top:30px; display:flex; gap:14px; justify-content:center; flex-wrap:wrap; }
+  .cta a.primary { background:var(--acc); color:#fff; }
+  .cta a.ghost { background:#fff; color:var(--acc); border:2px solid var(--acc); }
+  .cta a { display:inline-block; padding:13px 30px; border-radius:14px; font-size:17px; font-weight:700;
+    text-decoration:none; transition:transform .12s, box-shadow .12s; }
+  .cta a:hover { transform:translateY(-2px); box-shadow:0 10px 24px rgba(124,92,224,.25); }
+  .badges { margin-top:22px; display:flex; gap:10px; justify-content:center; flex-wrap:wrap; }
+  .badges span { background:rgba(255,255,255,.8); border:1px solid var(--line); border-radius:999px;
+    padding:5px 14px; font-size:13px; color:var(--sub); }
+
+  /* 截图 */
+  .shot { margin:36px auto 0; max-width:880px; border-radius:20px; overflow:hidden;
+    box-shadow:0 24px 60px rgba(124,92,224,.22), 0 8px 16px rgba(0,0,0,.08);
+    border:4px solid rgba(255,255,255,.9); background:#fff; }
+  .shot img { width:100%; display:block; }
+
+  /* 区块 */
+  section { padding:56px 0; }
+  section h2 { text-align:center; font-size:clamp(24px,4vw,32px); font-weight:800; }
+  section p.lead { text-align:center; color:var(--sub); margin-top:10px; }
+
+  /* 功能格 */
+  .grid { margin-top:36px; display:grid; grid-template-columns:repeat(auto-fit,minmax(270px,1fr)); gap:16px; }
+  .card { background:rgba(255,255,255,.85); border:1px solid var(--line); border-radius:16px; padding:22px; }
+  .card .ico { font-size:26px; }
+  .card h3 { font-size:17px; margin-top:8px; }
+  .card p { font-size:14px; color:var(--sub); margin-top:6px; }
+
+  /* 步骤 */
+  .steps { margin-top:36px; display:grid; grid-template-columns:repeat(auto-fit,minmax(240px,1fr)); gap:16px; counter-reset:st; }
+  .step { background:rgba(255,255,255,.85); border:1px solid var(--line); border-radius:16px; padding:24px; position:relative; }
+  .step::before { counter-increment:st; content:counter(st); position:absolute; top:-14px; left:20px;
+    width:30px; height:30px; border-radius:9px; background:linear-gradient(135deg,#a78bfa,#34d399);
+    color:#fff; font-weight:800; display:flex; align-items:center; justify-content:center; font-size:15px; }
+  .step h3 { font-size:16px; margin-top:6px; }
+  .step p { font-size:14px; color:var(--sub); margin-top:6px; }
+
+  /* FAQ */
+  .faq { margin-top:30px; }
+  .faq details { background:rgba(255,255,255,.85); border:1px solid var(--line); border-radius:14px; padding:16px 20px; margin-top:12px; }
+  .faq summary { font-weight:700; cursor:pointer; font-size:15px; }
+  .faq details p { margin-top:10px; font-size:14px; color:var(--sub); }
+
+  /* 底部 CTA */
+  .final { text-align:center; padding:30px 0 70px; }
+  .final .cta { margin-top:24px; }
+  footer { border-top:1px solid var(--line); padding:26px 0 40px; font-size:13px; color:var(--sub); }
+  footer .wrap { display:flex; gap:18px; flex-wrap:wrap; justify-content:center; }
+  footer a { color:var(--acc); text-decoration:none; }
+</style>
 </head>
-<body style="font-family:system-ui,sans-serif;text-align:center;padding-top:15vh;color:#444">
-  <p>正在打开 <strong>crpatchwork · ST 预设拼布工坊</strong>…</p>
-  <p style="font-size:14px">若未自动跳转，请点击 <a href="crpatchwork.html">此处进入工具</a>。</p>
+<body>
+
+<header>
+  <div class="wrap">
+    <span class="brandmark">🐦</span>
+    <span class="name">crpatchwork <small>· ST 预设编辑器</small></span>
+    <span class="gh"><a href="https://github.com/cyanrobin/crpatchwork" rel="noopener">GitHub ⭒ 开源</a></span>
+  </div>
+</header>
+
+<div class="hero wrap">
+  <h1>一团乱麻的预设<br><span class="accent">拖一拖</span>就清晰了</h1>
+  <p class="sub">一个 <strong>SillyTavern（酒馆）预设</strong>可视化编辑器<br>把你正在拼的那堆 prompt，拖拽理顺、看清每个位置</p>
+  <div class="cta">
+    <a class="primary" href="crpatchwork.html">🚀 在线打开工具</a>
+    <a class="ghost" href="https://github.com/cyanrobin/crpatchwork/raw/refs/heads/main/crpatchwork.html">⬇ 下载离线版</a>
+  </div>
+  <div class="badges">
+    <span>✓ 免安装 免注册</span><span>✓ 纯本地运行 数据不出浏览器</span><span>✓ 断网也能用</span><span>✓ 单文件 零依赖</span>
+  </div>
+  <div class="shot"><img src="assets/main_ui.png" alt="crpatchwork 预设编辑器主界面，示例为 SillyTavern 自带的 Default 默认预设：左侧卡片列表，右侧编辑面板"></div>
+</div>
+
+<section class="wrap">
+  <h2>它能做什么</h2>
+  <p class="lead">为经常折腾预设的酒馆玩家设计，每个功能都从真实编辑流程里长出来</p>
+  <div class="grid">
+    <div class="card"><div class="ico">🗂️</div><h3>拖拽换序</h3><p>左列一张卡 = 一条提示词。按住拖动即换顺序，多选批量挪，注入顺序一目了然。</p></div>
+    <div class="card"><div class="ico">✒️</div><h3>完整字段编辑</h3><p>内容、role、注入位置、深度、order 全部可改，改动即存草稿，导出才落盘。</p></div>
+    <div class="card"><div class="ico">🔒</div><h3>酒馆槽位锁定</h3><p>自动识别由人物卡填充的条目与系统核心提示词，分类保护，手滑也改不坏预设结构。</p></div>
+    <div class="card"><div class="ico">🧮</div><h3>变量面板</h3><p>自动扫描全预设的 setvar / getvar：读写分账、点击高亮定位、批量改名、一键插入宏。</p></div>
+    <div class="card"><div class="ico">⧉</div><h3>跨标签页复制粘贴</h3><p>开两个页面就能在预设之间互抄条目，拼接别人的好片段像拼布一样自然。</p></div>
+    <div class="card"><div class="ico">↩️</div><h3>撤销 / 重做</h3><p>删除、换序、改名全部可回退，手滑有后悔药；改动被打断还会弹窗护住现场。</p></div>
+    <div class="card"><div class="ico">🌙</div><h3>夜间模式</h3><p>深浅两套主题，偏好自动记住，深夜拼预设不晃眼。</p></div>
+    <div class="card"><div class="ico">📦</div><h3>导出零损伤</h3><p>导出 JSON 只重写 prompts / prompt_order，其余字段原样保留，酒馆直接读回。</p></div>
+  </div>
+</section>
+
+<section class="wrap">
+  <h2>三步上手</h2>
+  <div class="steps">
+    <div class="step"><h3>打开预设</h3><p>右上「📂 打开 JSON」，或把 <code>.json</code> 预设文件直接拖进窗口。</p></div>
+    <div class="step"><h3>拖一拖、改一改</h3><p>拖动卡片理顺顺序，点卡片编辑内容，变量、槽位、多选都是顺手的事。</p></div>
+    <div class="step"><h3>导出回酒馆</h3><p>「⬇ 导出 JSON」得到 <code>xxx_edited.json</code>，放进 SillyTavern 预设目录即可使用。</p></div>
+  </div>
+</section>
+
+<section class="wrap">
+  <h2>常见问题</h2>
+  <div class="faq">
+    <details open><summary>要花钱吗？要注册吗？</summary><p>不要，完全免费、开源（MIT 协议）、无需注册。打开网页就能用。</p></details>
+    <details><summary>我的预设数据会被上传吗？</summary><p>不会。crpatchwork 是纯客户端工具，所有解析、编辑、导出都发生在你自己的浏览器里，没有任何服务器参与，断网也能正常使用。</p></details>
+    <details><summary>和直接改 JSON 文件比，好在哪？</summary><p>预设 JSON 动辄几百行，prompt_order 与 prompts 双列表交错、深度注入位置看不见摸不着。crpatchwork 把这些变成看得见的卡片：拖拽即换序、槽位自动锁定、变量一目了然，且导出只动该动的字段，不碰预设其余结构。</p></details>
+    <details><summary>手机上能用吗？</summary><p>可以。界面为窄屏做了适配，手机浏览器打开同一地址即可；但拖拽排序这类操作在电脑上手感更好。</p></details>
+    <details><summary>编辑时误删了怎么办？</summary><p>撤销/重做全程可用；关闭页面前若有未保存的改动，会弹窗确认，不留意外。</p></details>
+  </div>
+</section>
+
+<div class="final wrap">
+  <h2>现在就把预设理顺</h2>
+  <div class="cta">
+    <a class="primary" href="crpatchwork.html">🚀 在线打开工具</a>
+    <a class="ghost" href="https://github.com/cyanrobin/crpatchwork">⭐ GitHub 仓库</a>
+  </div>
+</div>
+
+<footer>
+  <div class="wrap">
+    <span>🐦✂️ crpatchwork · 青知更鸟造</span>
+    <a href="https://github.com/cyanrobin/crpatchwork/blob/main/README.md">使用说明</a>
+    <a href="https://github.com/cyanrobin/crpatchwork/blob/main/README.md#%EF%B8%8F-%E5%85%8D%E8%B4%A3%E5%A3%B0%E6%98%8E--disclaimer">免责声明</a>
+    <span>MIT License</span>
+  </div>
+</footer>
+
 </body>
 </html>
